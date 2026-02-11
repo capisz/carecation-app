@@ -44,19 +44,17 @@ export function AppShell({ children }: { children: React.ReactNode }) {
               <Image
                 src="/brand/carecation-heart-light.png"
                 alt="Carecation logo"
-                width={28}
-                height={28}
+                fill
+                sizes="28px"
                 priority
-                fetchPriority="high"
                 className="object-contain dark:hidden"
               />
               <Image
                 src="/brand/carecation-heart-dark.png"
                 alt="Carecation logo"
-                width={28}
-                height={28}
+                fill
+                sizes="28px"
                 priority
-                fetchPriority="high"
                 className="hidden object-contain dark:block"
               />
             </span>
