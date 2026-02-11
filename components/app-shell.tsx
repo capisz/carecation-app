@@ -30,6 +30,10 @@ export function AppShell({ children }: { children: React.ReactNode }) {
     router.push("/intake");
   };
 
+  const handleProviders = () => {
+    router.push("/providers");
+  };
+
   return (
     <div className="min-h-screen flex flex-col">
       <header className="sticky top-0 z-50 bg-card/80 backdrop-blur-md border-b">
@@ -92,6 +96,10 @@ export function AppShell({ children }: { children: React.ReactNode }) {
               <Moon className="absolute h-5 w-5 rotate-90 scale-0 transition-all dark:rotate-0 dark:scale-100" aria-hidden="true" />
             </Button>
 
+            <Button variant="outline" onClick={handleProviders}>
+              For Providers
+            </Button>
+
             <Button onClick={handleCarePlan} onMouseEnter={() => router.prefetch("/intake")}>
               Begin your care plan
               <ArrowRight className="ml-2 h-4 w-4" aria-hidden="true" />
@@ -141,6 +149,10 @@ export function AppShell({ children }: { children: React.ReactNode }) {
                 >
                   <Sun className="h-4 w-4 rotate-0 scale-100 transition-all dark:-rotate-90 dark:scale-0" aria-hidden="true" />
                   <Moon className="absolute h-4 w-4 rotate-90 scale-0 transition-all dark:rotate-0 dark:scale-100" aria-hidden="true" />
+                </Button>
+
+                <Button variant="outline" className="flex-1" onClick={() => { setMobileOpen(false); handleProviders(); }}>
+                  For Providers
                 </Button>
 
                 <Button className="flex-1" onClick={() => { setMobileOpen(false); handleCarePlan(); }}>
