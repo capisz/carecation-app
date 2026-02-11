@@ -13,6 +13,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { ArrowLeft, ArrowRight } from "lucide-react";
 import {
   PROCEDURE_CATEGORIES,
+  PROCEDURE_DESCRIPTIONS,
   COUNTRIES,
   TRAVEL_MONTHS,
   BUDGET_RANGES,
@@ -83,69 +84,17 @@ export default function IntakePage() {
               <div className="space-y-4">
                 <Label className="text-base font-semibold">What type of care are you looking for?</Label>
                 <RadioGroup value={form.procedure} onValueChange={(v) => update("procedure", v)}>
-                  <div className="flex items-center gap-3 rounded-lg border p-4 cursor-pointer hover:bg-muted/50 transition-colors">
-                    <RadioGroupItem value="Dental" id="Dental" />
-                    <Label htmlFor="Dental" className="cursor-pointer flex-1">
-                      <span className="font-medium">Dental</span>
-                      <span className="block text-sm text-muted-foreground mt-0.5">
-                        Implants, veneers, crowns, whitening, and general dentistry
-                      </span>
-                    </Label>
-                  </div>
-                  <div className="flex items-center gap-3 rounded-lg border p-4 cursor-pointer hover:bg-muted/50 transition-colors">
-                    <RadioGroupItem value="Cosmetic Surgery" id="Cosmetic" />
-                    <Label htmlFor="Cosmetic" className="cursor-pointer flex-1">
-                      <span className="font-medium">Cosmetic Surgery</span>
-                      <span className="block text-sm text-muted-foreground mt-0.5">
-                        Rhinoplasty, facelift, liposuction, hair transplant, and more
-                      </span>
-                    </Label>
-                  </div>
-                  <div className="flex items-center gap-3 rounded-lg border p-4 cursor-pointer hover:bg-muted/50 transition-colors">
-                    <RadioGroupItem value="Orthopedic" id="Orthopedic" />
-                    <Label htmlFor="Orthopedic" className="cursor-pointer flex-1">
-                      <span className="font-medium">Orthopedic</span>
-                      <span className="block text-sm text-muted-foreground mt-0.5">
-                        Joint replacement, spine surgery, sports medicine
-                      </span>
-                    </Label>
-                  </div>
-                  <div className="flex items-center gap-3 rounded-lg border p-4 cursor-pointer hover:bg-muted/50 transition-colors">
-                    <RadioGroupItem value="Bariatric" id="Bariatric" />
-                    <Label htmlFor="Bariatric" className="cursor-pointer flex-1">
-                      <span className="font-medium">Bariatric</span>
-                      <span className="block text-sm text-muted-foreground mt-0.5">
-                        Weight loss surgery, gastric bypass, sleeve gastrectomy
-                      </span>
-                    </Label>
-                  </div>
-                  <div className="flex items-center gap-3 rounded-lg border p-4 cursor-pointer hover:bg-muted/50 transition-colors">
-                    <RadioGroupItem value="Ophthalmology" id="Ophthalmology" />
-                    <Label htmlFor="Ophthalmology" className="cursor-pointer flex-1">
-                      <span className="font-medium">Ophthalmology</span>
-                      <span className="block text-sm text-muted-foreground mt-0.5">
-                        LASIK, cataract surgery, eye care treatments
-                      </span>
-                    </Label>
-                  </div>
-                  <div className="flex items-center gap-3 rounded-lg border p-4 cursor-pointer hover:bg-muted/50 transition-colors">
-                    <RadioGroupItem value="Cardiology" id="Cardiology" />
-                    <Label htmlFor="Cardiology" className="cursor-pointer flex-1">
-                      <span className="font-medium">Cardiology</span>
-                      <span className="block text-sm text-muted-foreground mt-0.5">
-                        Heart procedures, cardiovascular treatments
-                      </span>
-                    </Label>
-                  </div>
-                  <div className="flex items-center gap-3 rounded-lg border p-4 cursor-pointer hover:bg-muted/50 transition-colors">
-                    <RadioGroupItem value="Other" id="Other" />
-                    <Label htmlFor="Other" className="cursor-pointer flex-1">
-                      <span className="font-medium">Other</span>
-                      <span className="block text-sm text-muted-foreground mt-0.5">
-                        Other medical or healthcare procedures
-                      </span>
-                    </Label>
-                  </div>
+                  {PROCEDURE_CATEGORIES.map((cat) => (
+                    <div key={cat} className="flex items-center gap-3 rounded-lg border p-4 cursor-pointer hover:bg-muted/50 transition-colors">
+                      <RadioGroupItem value={cat} id={cat} />
+                      <Label htmlFor={cat} className="cursor-pointer flex-1">
+                        <span className="font-medium">{cat}</span>
+                        <span className="block text-sm text-muted-foreground mt-0.5">
+                          {PROCEDURE_DESCRIPTIONS[cat]}
+                        </span>
+                      </Label>
+                    </div>
+                  ))}
                 </RadioGroup>
               </div>
             )}

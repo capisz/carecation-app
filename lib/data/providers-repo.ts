@@ -121,6 +121,7 @@ export function getAllProviders(): Provider[] {
 export type { Provider, RecoveryComfort } from "@/lib/mock/providers";
 export {
   PROCEDURE_CATEGORIES,
+  PROCEDURE_DESCRIPTIONS,
   COUNTRIES,
   LANGUAGES,
   BUDGET_RANGES,
