@@ -47,6 +47,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
                 fill
                 sizes="28px"
                 priority
+                loading="eager"
                 className="object-contain dark:hidden"
               />
               <Image
@@ -55,6 +56,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
                 fill
                 sizes="28px"
                 priority
+                loading="eager"
                 className="hidden object-contain dark:block"
               />
             </span>
