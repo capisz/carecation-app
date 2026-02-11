@@ -13,7 +13,6 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { ArrowLeft, ArrowRight } from "lucide-react";
 import {
   PROCEDURE_CATEGORIES,
-  PROCEDURE_DESCRIPTIONS,
   COUNTRIES,
   TRAVEL_MONTHS,
   BUDGET_RANGES,
@@ -82,7 +81,7 @@ export default function IntakePage() {
           <CardContent className="p-6 sm:p-8">
             {step === 0 && (
               <div className="space-y-4">
-                <Label className="text-base font-semibold">What type of care are you looking for?</Label>
+                <Label className="text-base font-semibold">What procedure are you looking for?</Label>
                 <RadioGroup value={form.procedure} onValueChange={(v) => update("procedure", v)}>
                   {PROCEDURE_CATEGORIES.map((cat) => (
                     <div key={cat} className="flex items-center gap-3 rounded-lg border p-4 cursor-pointer hover:bg-muted/50 transition-colors">
@@ -90,7 +89,9 @@ export default function IntakePage() {
                       <Label htmlFor={cat} className="cursor-pointer flex-1">
                         <span className="font-medium">{cat}</span>
                         <span className="block text-sm text-muted-foreground mt-0.5">
-                          {PROCEDURE_DESCRIPTIONS[cat]}
+                          {cat === "Dental"
+                            ? "Implants, veneers, crowns, whitening, and more"
+                            : "Rhinoplasty, facelift, liposuction, hair transplant, and more"}
                         </span>
                       </Label>
                     </div>

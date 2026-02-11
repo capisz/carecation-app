@@ -15,26 +15,8 @@ export interface Provider {
   description: string;
 }
 
-export const PROCEDURE_CATEGORIES = [
-  "Dental",
-  "Cosmetic Surgery",
-  "Orthopedic",
-  "Bariatric",
-  "Ophthalmology",
-  "Cardiology",
-  "Other",
-] as const;
+export const PROCEDURE_CATEGORIES = ["Dental", "Cosmetic"] as const;
 export type ProcedureCategory = (typeof PROCEDURE_CATEGORIES)[number];
-
-export const PROCEDURE_DESCRIPTIONS: Record<string, string> = {
-  Dental: "Implants, veneers, crowns, whitening, and general dentistry",
-  "Cosmetic Surgery": "Rhinoplasty, facelift, liposuction, hair transplant, and more",
-  Orthopedic: "Joint replacement, spine surgery, sports medicine",
-  Bariatric: "Weight loss surgery, gastric bypass, sleeve gastrectomy",
-  Ophthalmology: "LASIK, cataract surgery, eye care treatments",
-  Cardiology: "Heart procedures, cardiovascular treatments",
-  Other: "Other medical or healthcare procedures",
-};
 
 export const COUNTRIES = ["Thailand", "Mexico", "Turkey"] as const;
 

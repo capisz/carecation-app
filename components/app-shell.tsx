@@ -96,7 +96,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
               <Moon className="absolute h-5 w-5 rotate-90 scale-0 transition-all dark:rotate-0 dark:scale-100" aria-hidden="true" />
             </Button>
 
-            <Button variant="secondary" onClick={handleProviders}>
+            <Button variant="outline" onClick={handleProviders}>
               For Providers
             </Button>
 
@@ -151,7 +151,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
                   <Moon className="absolute h-4 w-4 rotate-90 scale-0 transition-all dark:rotate-0 dark:scale-100" aria-hidden="true" />
                 </Button>
 
-                <Button variant="secondary" className="flex-1" onClick={() => { setMobileOpen(false); handleProviders(); }}>
+                <Button variant="outline" className="flex-1" onClick={() => { setMobileOpen(false); handleProviders(); }}>
                   For Providers
                 </Button>
 
