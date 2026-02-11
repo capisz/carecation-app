@@ -44,8 +44,8 @@ export function AppShell({ children }: { children: React.ReactNode }) {
               <Image
                 src="/brand/carecation-heart-light.png"
                 alt="Carecation logo"
-                fill
-                sizes="28px"
+                width={28}
+                height={28}
                 priority
                 loading="eager"
                 className="object-contain dark:hidden"
@@ -53,8 +53,8 @@ export function AppShell({ children }: { children: React.ReactNode }) {
               <Image
                 src="/brand/carecation-heart-dark.png"
                 alt="Carecation logo"
-                fill
-                sizes="28px"
+                width={28}
+                height={28}
                 priority
                 loading="eager"
                 className="hidden object-contain dark:block"
