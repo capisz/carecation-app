@@ -45,19 +45,19 @@ export function AppShell({ children }: { children: React.ReactNode }) {
                 src="/brand/carecation-heart-light.png"
                 alt="Carecation logo"
                 fill
-                sizes="40px"
-                className="object-contain dark:hidden"
+                sizes="28px"
                 priority
                 loading="eager"
+                className="object-contain dark:hidden"
               />
               <Image
                 src="/brand/carecation-heart-dark.png"
                 alt="Carecation logo"
                 fill
-                sizes="40px"
-                className="hidden object-contain dark:block"
+                sizes="28px"
                 priority
                 loading="eager"
+                className="hidden object-contain dark:block"
               />
             </span>
 
