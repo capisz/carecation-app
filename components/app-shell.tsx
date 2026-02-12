@@ -15,7 +15,6 @@ const navLinks = [
   { href: "/", label: "Home" },
   { href: "/intake", label: "Plan Trip" },
   { href: "/results", label: "Providers" },
-  { href: "/providers", label: "For Providers" },
   { href: "/admin/providers", label: "Admin" },
 ];
 
