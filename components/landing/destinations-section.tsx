@@ -514,21 +514,25 @@ export function DestinationsSection() {
                   >
                     {/* Flip container */}
                     <div
-                      className="relative w-full"
+                      className="relative w-full h-full"
                       style={{
                         transformStyle: "preserve-3d",
                         transition: prefersReducedMotion 
                           ? "opacity 0.3s ease-out" 
                           : "transform 0.6s cubic-bezier(0.4, 0, 0.2, 1)",
                         transform: isFlipped ? "rotateY(180deg)" : "rotateY(0deg)",
+                        minHeight: "500px",
                       }}
                     >
                       {/* Front side */}
                       <div
-                        className="w-full"
+                        className="w-full h-full"
                         style={{
                           backfaceVisibility: "hidden",
                           WebkitBackfaceVisibility: "hidden",
+                          position: "absolute",
+                          top: 0,
+                          left: 0,
                         }}
                       >
                         <Card
