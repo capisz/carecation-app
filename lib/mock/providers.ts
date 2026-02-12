@@ -15,7 +15,16 @@ export interface Provider {
   description: string;
 }
 
-export const PROCEDURE_CATEGORIES = ["Dental", "Cosmetic"] as const;
+export const PROCEDURE_CATEGORIES = [
+  "Dental", 
+  "Cosmetic", 
+  "Orthopedic", 
+  "Cardiology", 
+  "Imaging & Diagnostics",
+  "Eye Care",
+  "Fertility",
+  "Weight Loss Surgery"
+] as const;
 export type ProcedureCategory = (typeof PROCEDURE_CATEGORIES)[number];
 
 export const COUNTRIES = ["Thailand", "Mexico", "Turkey"] as const;
@@ -230,6 +239,156 @@ export const providers: Provider[] = [
     images: ["/placeholder-provider.jpg"],
     description: "Located in Turkey's capital, offering quality cosmetic procedures at competitive prices. Experienced surgeons with a focus on natural-looking results.",
   },
+  // Orthopedic providers
+  {
+    id: "th-ortho-1",
+    name: "Bangkok Orthopedic Center",
+    country: "Thailand",
+    city: "Bangkok",
+    procedures: ["Knee Replacement", "Hip Replacement", "Spinal Surgery"],
+    languages: ["English", "Thai"],
+    accreditation: ["JCI", "Thai Medical Council"],
+    priceRangeUSD: { min: 8000, max: 18000 },
+    rating: 4.7,
+    reviewCount: 284,
+    packageIncludes: ["Private room", "Physical therapy", "Post-op follow-up", "All medications", "Airport transfer"],
+    recoveryDays: 14,
+    images: ["/placeholder-provider.jpg"],
+    description: "Specialized orthopedic hospital with state-of-the-art robotic surgery systems. Our team performs over 2,000 joint replacements annually with excellent outcomes.",
+  },
+  {
+    id: "mx-ortho-1",
+    name: "Monterrey Joint Institute",
+    country: "Mexico",
+    city: "Monterrey",
+    procedures: ["Knee Replacement", "Hip Replacement", "Joint Reconstruction"],
+    languages: ["English", "Spanish"],
+    accreditation: ["Mexico Quality Certificate"],
+    priceRangeUSD: { min: 7000, max: 15000 },
+    rating: 4.5,
+    reviewCount: 167,
+    packageIncludes: ["Recovery facility", "Physical therapy", "All implants", "Post-op care"],
+    recoveryDays: 12,
+    images: ["/placeholder-provider.jpg"],
+    description: "Leading orthopedic center in Northern Mexico. Board-certified surgeons trained at top US institutions.",
+  },
+  // Cardiology providers
+  {
+    id: "th-cardio-1",
+    name: "Bangkok Heart Hospital",
+    country: "Thailand",
+    city: "Bangkok",
+    procedures: ["Heart Bypass", "Valve Replacement", "Cardiac Catheterization"],
+    languages: ["English", "Thai"],
+    accreditation: ["JCI", "Thai Heart Association"],
+    priceRangeUSD: { min: 15000, max: 35000 },
+    rating: 4.9,
+    reviewCount: 432,
+    packageIncludes: ["ICU care", "All cardiac monitoring", "Medications", "Recovery suite", "Follow-up"],
+    recoveryDays: 10,
+    images: ["/placeholder-provider.jpg"],
+    description: "Asia's premier cardiac care facility with over 30 years of excellence. Our cardiac surgeons are internationally recognized with fellowship training from leading institutions.",
+  },
+  // Imaging & Diagnostics
+  {
+    id: "th-imaging-1",
+    name: "Bangkok Medical Imaging Center",
+    country: "Thailand",
+    city: "Bangkok",
+    procedures: ["MRI Scan", "CT Scan", "PET Scan", "Full Body Screening"],
+    languages: ["English", "Thai", "German"],
+    accreditation: ["JCI", "ACR Accredited"],
+    priceRangeUSD: { min: 400, max: 2000 },
+    rating: 4.8,
+    reviewCount: 567,
+    packageIncludes: ["Digital reports", "Radiologist consultation", "CD of images", "English reports"],
+    recoveryDays: 0,
+    images: ["/placeholder-provider.jpg"],
+    description: "State-of-the-art diagnostic imaging with latest generation equipment. Same-day results with expert radiologist interpretation.",
+  },
+  // Eye Care
+  {
+    id: "tr-eye-1",
+    name: "Istanbul Vision Clinic",
+    country: "Turkey",
+    city: "Istanbul",
+    procedures: ["LASIK", "Cataract Surgery", "Retinal Treatment"],
+    languages: ["English", "Turkish", "German"],
+    accreditation: ["Turkish Ophthalmology Association", "ISO 9001"],
+    priceRangeUSD: { min: 1500, max: 4000 },
+    rating: 4.7,
+    reviewCount: 892,
+    packageIncludes: ["All pre-op tests", "Post-op drops", "Follow-up visits", "Hotel package"],
+    recoveryDays: 3,
+    images: ["/placeholder-provider.jpg"],
+    description: "Leading eye surgery center with over 50,000 successful procedures. Latest femtosecond laser technology for bladeless LASIK.",
+  },
+  {
+    id: "mx-eye-1",
+    name: "Cancun Eye Institute",
+    country: "Mexico",
+    city: "Cancun",
+    procedures: ["LASIK", "Cataract Surgery"],
+    languages: ["English", "Spanish"],
+    accreditation: ["ADA Certified"],
+    priceRangeUSD: { min: 1200, max: 3500 },
+    rating: 4.6,
+    reviewCount: 445,
+    packageIncludes: ["Complete eye exam", "All medications", "Follow-up care", "Beach recovery"],
+    recoveryDays: 2,
+    images: ["/placeholder-provider.jpg"],
+    description: "Modern eye surgery center in beautiful Cancun. Combine your vision correction with a tropical vacation.",
+  },
+  // Fertility
+  {
+    id: "th-fertility-1",
+    name: "Bangkok IVF Center",
+    country: "Thailand",
+    city: "Bangkok",
+    procedures: ["IVF", "Egg Freezing", "Fertility Assessment"],
+    languages: ["English", "Thai"],
+    accreditation: ["JCI", "RTAC Certified"],
+    priceRangeUSD: { min: 5000, max: 15000 },
+    rating: 4.8,
+    reviewCount: 326,
+    packageIncludes: ["All medications", "Monitoring", "Lab work", "Counseling", "Accommodation assistance"],
+    recoveryDays: 5,
+    images: ["/placeholder-provider.jpg"],
+    description: "One of Asia's most successful fertility clinics with over 60% success rate. Compassionate care with cutting-edge reproductive technology.",
+  },
+  // Weight Loss Surgery
+  {
+    id: "mx-bariatric-1",
+    name: "Tijuana Bariatric Center",
+    country: "Mexico",
+    city: "Tijuana",
+    procedures: ["Gastric Bypass", "Gastric Sleeve", "Lap Band"],
+    languages: ["English", "Spanish"],
+    accreditation: ["ASMBS Member", "Mexico Quality Certificate"],
+    priceRangeUSD: { min: 4500, max: 9000 },
+    rating: 4.7,
+    reviewCount: 534,
+    packageIncludes: ["Recovery hotel", "Nutritionist", "All medications", "Post-op support group", "Airport transfer"],
+    recoveryDays: 7,
+    images: ["/placeholder-provider.jpg"],
+    description: "Specialized bariatric surgery center with over 10,000 successful procedures. Comprehensive pre and post-op support for long-term success.",
+  },
+  {
+    id: "tr-bariatric-1",
+    name: "Istanbul Weight Loss Clinic",
+    country: "Turkey",
+    city: "Istanbul",
+    procedures: ["Gastric Sleeve", "Gastric Bypass"],
+    languages: ["English", "Turkish", "German"],
+    accreditation: ["Turkish Ministry of Health", "IFSO Member"],
+    priceRangeUSD: { min: 4000, max: 8500 },
+    rating: 4.6,
+    reviewCount: 412,
+    packageIncludes: ["5-star hotel", "VIP transfer", "Nutritionist", "Vitamins", "Lifetime follow-up"],
+    recoveryDays: 6,
+    images: ["/placeholder-provider.jpg"],
+    description: "Expert bariatric surgeons with international training. All-inclusive packages with comprehensive aftercare program.",
+  },
 ];
 
 /* Fixed travel & lodging placeholders used for estimated total trip cost */
@@ -251,7 +410,21 @@ export function getProviderById(id: string): Provider | undefined {
 
 export function getProcedureCategory(procedure: string): ProcedureCategory {
   const dentalProcedures = ["Dental Implants", "Veneers", "Crowns", "Root Canal", "Teeth Whitening", "All-on-4", "Hollywood Smile", "Bridges"];
-  return dentalProcedures.includes(procedure) ? "Dental" : "Cosmetic";
+  const orthopedicProcedures = ["Knee Replacement", "Hip Replacement", "Spinal Surgery", "Joint Reconstruction"];
+  const cardiologyProcedures = ["Heart Bypass", "Cardiac Catheterization", "Valve Replacement", "Angioplasty"];
+  const imagingProcedures = ["MRI Scan", "CT Scan", "PET Scan", "Full Body Screening"];
+  const eyeCareProcedures = ["LASIK", "Cataract Surgery", "Retinal Treatment", "Glaucoma Treatment"];
+  const fertilityProcedures = ["IVF", "Egg Freezing", "Fertility Assessment", "Donor Programs"];
+  const weightLossProcedures = ["Gastric Bypass", "Gastric Sleeve", "Lap Band", "Duodenal Switch"];
+  
+  if (dentalProcedures.includes(procedure)) return "Dental";
+  if (orthopedicProcedures.includes(procedure)) return "Orthopedic";
+  if (cardiologyProcedures.includes(procedure)) return "Cardiology";
+  if (imagingProcedures.includes(procedure)) return "Imaging & Diagnostics";
+  if (eyeCareProcedures.includes(procedure)) return "Eye Care";
+  if (fertilityProcedures.includes(procedure)) return "Fertility";
+  if (weightLossProcedures.includes(procedure)) return "Weight Loss Surgery";
+  return "Cosmetic";
 }
 
 export function filterProviders(params: {

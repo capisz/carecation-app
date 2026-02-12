@@ -83,19 +83,29 @@ export default function IntakePage() {
               <div className="space-y-4">
                 <Label className="text-base font-semibold">What procedure are you looking for?</Label>
                 <RadioGroup value={form.procedure} onValueChange={(v) => update("procedure", v)}>
-                  {PROCEDURE_CATEGORIES.map((cat) => (
-                    <div key={cat} className="flex items-center gap-3 rounded-lg border p-4 cursor-pointer hover:bg-muted/50 transition-colors">
-                      <RadioGroupItem value={cat} id={cat} />
-                      <Label htmlFor={cat} className="cursor-pointer flex-1">
-                        <span className="font-medium">{cat}</span>
-                        <span className="block text-sm text-muted-foreground mt-0.5">
-                          {cat === "Dental"
-                            ? "Implants, veneers, crowns, whitening, and more"
-                            : "Rhinoplasty, facelift, liposuction, hair transplant, and more"}
-                        </span>
-                      </Label>
-                    </div>
-                  ))}
+                  {PROCEDURE_CATEGORIES.map((cat) => {
+                    const descriptions: Record<string, string> = {
+                      "Dental": "Implants, veneers, crowns, whitening, and more",
+                      "Cosmetic": "Rhinoplasty, facelift, liposuction, hair transplant, and more",
+                      "Orthopedic": "Knee/hip replacement, spinal surgery, joint reconstruction",
+                      "Cardiology": "Heart bypass, valve replacement, catheterization",
+                      "Imaging & Diagnostics": "MRI, CT, PET scans, full body screening",
+                      "Eye Care": "LASIK, cataract surgery, retinal treatment",
+                      "Fertility": "IVF, egg freezing, fertility assessment",
+                      "Weight Loss Surgery": "Gastric bypass, sleeve, lap band"
+                    };
+                    return (
+                      <div key={cat} className="flex items-center gap-3 rounded-lg border p-4 cursor-pointer hover:bg-muted/50 transition-colors">
+                        <RadioGroupItem value={cat} id={cat} />
+                        <Label htmlFor={cat} className="cursor-pointer flex-1">
+                          <span className="font-medium">{cat}</span>
+                          <span className="block text-sm text-muted-foreground mt-0.5">
+                            {descriptions[cat] || "Various procedures available"}
+                          </span>
+                        </Label>
+                      </div>
+                    );
+                  })}
                 </RadioGroup>
               </div>
             )}
