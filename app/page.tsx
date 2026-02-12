@@ -18,21 +18,21 @@ export default function HomePage() {
       </div>
 
       {/* Plane rides THIS divider while you scroll through HowItWorks toward Destinations */}
-<section id="how" className="relative overflow-visible border-t border-border">
+<section id="how" className="relative overflow-visible border-t border-border" style={{ position: 'relative' }}>
         <ScrollSyncedDividerPlane startId="how" endId="destinations" />
         <ScrollReveal delay={0}>
           <HowItWorks />
         </ScrollReveal>
       </section>
 
-<section id="destinations" className="relative overflow-visible border-t border-border">
+<section id="destinations" className="relative overflow-visible border-t border-border" style={{ position: 'relative' }}>
         <ScrollSyncedDividerPlane startId="destinations" endId="trust" />
         <ScrollReveal delay={0.1}>
           <DestinationsSection />
         </ScrollReveal>
       </section>
 
-<section id="trust" className="relative overflow-visible border-t border-border">
+<section id="trust" className="relative overflow-visible border-t border-border" style={{ position: 'relative' }}>
         <ScrollSyncedDividerPlane startId="trust" endId="cta" />
         <ScrollReveal delay={0.1}>
           <TrustSection />
@@ -40,7 +40,7 @@ export default function HomePage() {
       </section>
 
       {/* Last section: you can omit plane or have it run to page bottom */}
-<section id="cta" className="relative overflow-visible border-t border-border">
+<section id="cta" className="relative overflow-visible border-t border-border" style={{ position: 'relative' }}>
   <ScrollSyncedDividerPlane startId="cta" endId="page-end" />
   <ScrollReveal delay={0.1}>
     <CtaSection />

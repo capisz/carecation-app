@@ -14,13 +14,13 @@ const CYCLE_MS = 4500;
 const STRIPE_COUNT = 5;
 const STRIPE_OPACITY = 0.095;
 
-// Faster + smoother
-const DUR_MIN = 1600;
-const DUR_MAX = 3300;
+// 2-3x faster for more alive feel
+const DUR_MIN = 600;
+const DUR_MAX = 1200;
 
-// Minimal “rest” so it feels continuous
+// No rest - continuous smooth transitions
 const HOLD_MIN = 0;
-const HOLD_MAX = 160;
+const HOLD_MAX = 0;
 
 // Starting tones (your current vibe)
 const INITIAL_STRIPES_HEX = ["#2b241c", "#3b4031", "#2f2a1f", "#3a3f30", "#2b241c"];
@@ -41,6 +41,10 @@ const PALETTE_HEX = [
   "#4a553f",
   "#45513c",
   "#414b38",
+  // Add more subtle warm/cool shifts for variety
+  "#352e23", "#3f4535", "#32291d", "#424937", "#2d261c",
+  "#4c5841", "#4f5a44", "#38331f", "#444f39", "#2c251a",
+  "#485440", "#3d442f", "#31281e", "#47523d", "#3e4934",
 ];
 
 const SLIDES = [
@@ -132,12 +136,12 @@ function pickDifferentTarget(cur: HSL, palette: HSL[]) {
   if (palette.length === 0) return cur;
   let next = palette[Math.floor(Math.random() * palette.length)];
 
-  for (let i = 0; i < 12; i++) {
+  for (let i = 0; i < 15; i++) {
     const dh = Math.abs(shortestHueDelta(cur.h, next.h));
     const ds = Math.abs(cur.s - next.s);
     const dl = Math.abs(cur.l - next.l);
-    // keep changes noticeable but not jumpy
-    if (dh + ds + dl > 10 && dh + ds + dl < 140) break;
+    // Allow more variation for continuous, alive feel
+    if (dh + ds + dl > 8 && dh + ds + dl < 180) break;
     next = palette[Math.floor(Math.random() * palette.length)];
   }
   return next;
