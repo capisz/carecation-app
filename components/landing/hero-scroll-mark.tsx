@@ -31,6 +31,7 @@ export function HeroScrollMark({
     <div
       ref={targetRef}
       className="pointer-events-none absolute inset-0 hidden lg:block"
+      style={{ position: 'absolute' }}
     >
       <motion.div
         className="absolute top-1/4 right-64 -translate-y-1/2"

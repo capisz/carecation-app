@@ -96,7 +96,7 @@ export function ScrollytellingStage({ sections }: ScrollytellingStageProps) {
   }
 
   return (
-    <div ref={containerRef} className="relative">
+    <div ref={containerRef} className="relative" style={{ position: 'relative' }}>
       {/* Normal document flow: all sections stacked vertically */}
       {sections.map((section, i) => (
         <div key={i}>{section}</div>
