@@ -551,13 +551,14 @@ export function DestinationsSection() {
                     >
                       {/* Front side */}
                       <div
-                        className="w-full h-full"
                         style={{
                           backfaceVisibility: "hidden",
                           WebkitBackfaceVisibility: "hidden",
                           position: "absolute",
                           top: 0,
                           left: 0,
+                          width: "100%",
+                          height: "100%",
                         }}
                       >
                         <Card
@@ -723,11 +724,15 @@ export function DestinationsSection() {
 
                       {/* Back side */}
                       <div
-                        className="absolute top-0 left-0 w-full h-full"
                         style={{
                           backfaceVisibility: "hidden",
                           WebkitBackfaceVisibility: "hidden",
                           transform: "rotateY(180deg)",
+                          position: "absolute",
+                          top: 0,
+                          left: 0,
+                          width: "100%",
+                          height: "100%",
                         }}
                       >
                         <Card
