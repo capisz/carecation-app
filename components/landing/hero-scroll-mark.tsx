@@ -15,11 +15,9 @@ export function HeroScrollMark({
   const targetRef = useRef<HTMLDivElement>(null);
 
   // finishes when the hero section scrolls out (end hits top)
-  // layoutEffect ensures ref is attached before useScroll runs
   const { scrollYProgress } = useScroll({
     target: targetRef,
     offset: ["start start", "end start"],
-    layoutEffect: false, // Use passive observation to avoid timing issues
   });
 
   // motion while scrolling out
