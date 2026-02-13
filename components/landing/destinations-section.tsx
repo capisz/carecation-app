@@ -298,8 +298,11 @@ export function DestinationsSection() {
   const toggleFlip = useCallback((index: number) => {
     setFlipped((prev) => {
       const next = new Set(prev);
-      if (next.has(index)) next.delete(index);
-      else next.add(index);
+      if (next.has(index)) {
+        next.delete(index);
+      } else {
+        next.add(index);
+      }
       return next;
     });
   }, []);
@@ -506,21 +509,34 @@ export function DestinationsSection() {
                 const isFlipped = flipped.has(i);
 
                 return (
+                  {/* Outer: perspective wrapper */}
                   <div
-                    key={`${dest.country}-${i}`}
-                    className="relative shrink-0 w-[300px] sm:w-[340px] lg:w-[380px]"
+                    key={i}
+                    className="inline-block flex-shrink-0 align-top w-[300px] md:w-[340px] lg:w-[380px] px-2 perspective-1000"
                     onMouseEnter={() => {
                       setHovered(i);
                       pausedRef.current = true;
                     }}
                     onMouseLeave={() => {
                       setHovered(null);
-                      pausedRef.current = false;
+                      pausedRef.current = isFlipped;
                       setTilt({ rx: 0, ry: 0 });
                     }}
                     onMouseMove={isHovered && !isFlipped ? handleTiltMove : undefined}
-                    style={{ perspective: 900 }}
                   >
+                    {/* Inner: transform container with preserve-3d, rotates on flip */}
+                    <div
+                      className={[
+                        "relative w-full preserve-3d",
+                        prefersReducedMotion ? "flip-card-transition-reduced" : "flip-card-transition",
+                        isFlipped ? "rotate-y-180" : "",
+                      ].join(" ")}
+                      style={{ minHeight: "500px" }}
+                    >
+                      {/* Front face: backface-hidden, absolute positioned */}
+                      <div
+                        className="backface-hidden absolute inset-0 w-full h-full"
+                      >
                     {/* Flip container */}
                     <div
                       className="relative w-full"
@@ -687,18 +703,9 @@ export function DestinationsSection() {
                         </div>
                       </div>
 
-                      {/* Back side */}
+                      {/* Back face: backface-hidden, absolute positioned, rotated 180deg */}
                       <div
-                        style={{
-                          backfaceVisibility: "hidden",
-                          WebkitBackfaceVisibility: "hidden",
-                          transform: "rotateY(180deg)",
-                          position: "absolute",
-                          top: 0,
-                          left: 0,
-                          width: "100%",
-                          height: "100%",
-                        }}
+                        className="backface-hidden rotate-y-180 absolute inset-0 w-full h-full"
                       >
                         {/* wrapper so back also looks “glowy” and consistent */}
                         <div className="relative h-full">
