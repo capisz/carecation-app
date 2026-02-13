@@ -693,7 +693,7 @@ export function DestinationsSection() {
 
                       {/* Back side */}
                       <div
-                        className="absolute top-0 left-0 w-full"
+                        className="absolute top-0 left-0 w-full h-full"
                         style={{
                           backfaceVisibility: "hidden",
                           WebkitBackfaceVisibility: "hidden",
@@ -702,14 +702,14 @@ export function DestinationsSection() {
                       >
                         <Card
                           className={[
-                            "relative overflow-hidden rounded-xl backdrop-blur-sm",
+                            "relative overflow-hidden rounded-xl backdrop-blur-sm h-full",
                            "bg-[hsl(77_30%_97%)]",
                             "dark:bg-[hsl(80_18%_33%)]",
                             "border-0 outline-none ring-0",
                             "shadow-[0_18px_44px_-34px_rgba(0,0,0,0.28)] dark:shadow-[0_22px_54px_-38px_rgba(0,0,0,0.62)]",
                           ].join(" ")}
                         >
-                          <CardContent className="p-5 min-h-[400px] flex flex-col">
+                          <CardContent className="p-5 h-full flex flex-col">
                             <div className="flex items-center justify-between mb-4">
                               <h3 className="text-xl font-bold text-foreground">
                                 {dest.country}
