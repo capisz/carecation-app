@@ -65,6 +65,7 @@ export function HeroScrollMark({
           width={1000}
           height={1000}
           priority
+          loading="eager"
           className="block dark:hidden w-[320px] max-w-[34vw] h-auto select-none"
         />
 
@@ -76,6 +77,7 @@ export function HeroScrollMark({
           width={1000}
           height={1000}
           priority
+          loading="eager"
           className="hidden dark:block w-[320px] max-w-[34vw] h-auto select-none"
         />
       </motion.div>
