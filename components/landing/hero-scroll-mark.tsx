@@ -13,8 +13,10 @@ export function HeroScrollMark({
 }) {
   const targetRef = useRef<HTMLDivElement>(null);
   const [prefersReducedMotion, setPrefersReducedMotion] = useState(false);
+  const [isMounted, setIsMounted] = useState(false);
 
   useEffect(() => {
+    setIsMounted(true);
     const mediaQuery = window.matchMedia("(prefers-reduced-motion: reduce)");
     setPrefersReducedMotion(mediaQuery.matches);
     
@@ -23,9 +25,9 @@ export function HeroScrollMark({
     return () => mediaQuery.removeEventListener("change", listener);
   }, []);
 
-  // finishes when the hero section scrolls out (end hits top)
+  // Only initialize scroll after mount to avoid SSR/hydration hook order issues
   const { scrollYProgress } = useScroll({
-    target: targetRef,
+    target: isMounted ? targetRef : undefined,
     offset: ["start start", "end start"],
   });
 
