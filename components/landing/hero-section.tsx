@@ -248,7 +248,7 @@ export function HeroSection() {
   };
 
   return (
-    <section className="relative overflow-hidden" aria-labelledby="hero-heading">
+    <section className="relative overflow-hidden" aria-labelledby="hero-heading" style={{ position: 'relative' }}>
       <div className="absolute inset-0 bg-secondary/50" />
 
       {/* Continuously shifting stripes */}

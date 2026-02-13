@@ -30,6 +30,7 @@ export function ScrollytellingStage({ sections }: ScrollytellingStageProps) {
   const { scrollYProgress } = useScroll({
     target: containerRef,
     offset: ["start start", "start end"],
+    layoutEffect: false, // Use passive observation to avoid timing issues
   });
 
   // Each section occupies 1/n of scroll progress.
