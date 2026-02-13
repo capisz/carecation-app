@@ -4,6 +4,7 @@ import { Poppins, Libre_Baskerville, IBM_Plex_Mono } from "next/font/google";
 import { ThemeProvider } from "@/components/theme-provider";
 import { OverlayProvider } from "@/components/overlay/overlay-provider";
 import { NavOverlay } from "@/components/overlay/nav-overlay";
+import { SuppressWarnings } from "./suppress-warnings";
 import "./globals.css";
 
 const poppins = Poppins({
@@ -46,6 +47,7 @@ export default function RootLayout({
           enableSystem
           disableTransitionOnChange
         >
+          <SuppressWarnings />
           <OverlayProvider>
             <NavOverlay />
             {children}
