@@ -1,11 +1,10 @@
 "use client";
 
-import React, { useRef } from "react";
+import React, { useRef, useEffect, useState } from "react";
 import {
   motion,
   useScroll,
   useTransform,
-  useReducedMotion,
 } from "framer-motion";
 
 /**
@@ -23,9 +22,18 @@ interface ScrollytellingStageProps {
 }
 
 export function ScrollytellingStage({ sections }: ScrollytellingStageProps) {
-  const reducedMotion = useReducedMotion();
   const containerRef = useRef<HTMLDivElement>(null);
+  const [reducedMotion, setReducedMotion] = useState(false);
   const n = sections.length;
+
+  useEffect(() => {
+    const mediaQuery = window.matchMedia("(prefers-reduced-motion: reduce)");
+    setReducedMotion(mediaQuery.matches);
+    
+    const listener = (e: MediaQueryListEvent) => setReducedMotion(e.matches);
+    mediaQuery.addEventListener("change", listener);
+    return () => mediaQuery.removeEventListener("change", listener);
+  }, []);
 
   const { scrollYProgress } = useScroll({
     target: containerRef,
