@@ -282,6 +282,10 @@ export function DestinationsSection() {
   const [flipped, setFlipped] = useState<Set<number>>(new Set());
   const [tilt, setTilt] = useState<{ rx: number; ry: number }>({ rx: 0, ry: 0 });
   const [prefersReducedMotion, setPrefersReducedMotion] = useState(false);
+  
+  // Drag detection for carousel
+  const dragStartRef = useRef<{ x: number; y: number } | null>(null);
+  const isDraggingRef = useRef(false);
 
   // Check for reduced motion preference
   useEffect(() => {
@@ -294,13 +298,17 @@ export function DestinationsSection() {
   }, []);
 
   const toggleFlip = useCallback((index: number) => {
+    console.log("[v0] toggleFlip called for index:", index);
     setFlipped((prev) => {
       const next = new Set(prev);
       if (next.has(index)) {
+        console.log("[v0] Removing flip for index:", index);
         next.delete(index);
       } else {
+        console.log("[v0] Adding flip for index:", index);
         next.add(index);
       }
+      console.log("[v0] New flipped set:", Array.from(next));
       return next;
     });
   }, []);
@@ -485,6 +493,23 @@ export function DestinationsSection() {
     WebkitMaskSize: "100% 100%",
     maskSize: "100% 100%",
   }}
+  onPointerDown={(e) => {
+    dragStartRef.current = { x: e.clientX, y: e.clientY };
+    isDraggingRef.current = false;
+  }}
+  onPointerMove={(e) => {
+    if (dragStartRef.current) {
+      const dx = Math.abs(e.clientX - dragStartRef.current.x);
+      const dy = Math.abs(e.clientY - dragStartRef.current.y);
+      if (dx > 6 || dy > 6) {
+        isDraggingRef.current = true;
+      }
+    }
+  }}
+  onPointerUp={() => {
+    dragStartRef.current = null;
+    isDraggingRef.current = false;
+  }}
 >
             <div
               ref={trackRef}
@@ -514,12 +539,12 @@ export function DestinationsSection() {
                   >
                     {/* Flip container */}
                     <div
-                      className="relative w-full h-full"
+                      className="relative w-full"
                       style={{
                         transformStyle: "preserve-3d",
                         transition: prefersReducedMotion 
                           ? "opacity 0.3s ease-out" 
-                          : "transform 0.6s cubic-bezier(0.4, 0, 0.2, 1)",
+                          : "transform 0.45s cubic-bezier(0.4, 0, 0.2, 1)",
                         transform: isFlipped ? "rotateY(180deg)" : "rotateY(0deg)",
                         minHeight: "500px",
                       }}
@@ -673,12 +698,17 @@ export function DestinationsSection() {
                               type="button"
                               onClick={(e) => {
                                 e.stopPropagation();
-                                toggleFlip(i);
+                                console.log("[v0] Click detected, isDragging:", isDraggingRef.current);
+                                if (!isDraggingRef.current) {
+                                  console.log("[v0] Toggling flip for card", i);
+                                  toggleFlip(i);
+                                }
                               }}
                               onKeyDown={(e) => {
                                 if (e.key === "Enter" || e.key === " ") {
                                   e.preventDefault();
                                   e.stopPropagation();
+                                  console.log("[v0] Keyboard flip for card", i);
                                   toggleFlip(i);
                                 }
                               }}
@@ -742,12 +772,17 @@ export function DestinationsSection() {
                               type="button"
                               onClick={(e) => {
                                 e.stopPropagation();
-                                toggleFlip(i);
+                                console.log("[v0] Back click, isDragging:", isDraggingRef.current);
+                                if (!isDraggingRef.current) {
+                                  console.log("[v0] Toggling back for card", i);
+                                  toggleFlip(i);
+                                }
                               }}
                               onKeyDown={(e) => {
                                 if (e.key === "Enter" || e.key === " ") {
                                   e.preventDefault();
                                   e.stopPropagation();
+                                  console.log("[v0] Keyboard back for card", i);
                                   toggleFlip(i);
                                 }
                               }}
