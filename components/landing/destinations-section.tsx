@@ -282,33 +282,24 @@ export function DestinationsSection() {
   const [flipped, setFlipped] = useState<Set<number>>(new Set());
   const [tilt, setTilt] = useState<{ rx: number; ry: number }>({ rx: 0, ry: 0 });
   const [prefersReducedMotion, setPrefersReducedMotion] = useState(false);
-  
+
   // Drag detection for carousel
   const dragStartRef = useRef<{ x: number; y: number } | null>(null);
   const isDraggingRef = useRef(false);
 
-  // Check for reduced motion preference
   useEffect(() => {
     const mediaQuery = window.matchMedia("(prefers-reduced-motion: reduce)");
     setPrefersReducedMotion(mediaQuery.matches);
-
     const handleChange = (e: MediaQueryListEvent) => setPrefersReducedMotion(e.matches);
     mediaQuery.addEventListener("change", handleChange);
     return () => mediaQuery.removeEventListener("change", handleChange);
   }, []);
 
   const toggleFlip = useCallback((index: number) => {
-    console.log("[v0] toggleFlip called for index:", index);
     setFlipped((prev) => {
       const next = new Set(prev);
-      if (next.has(index)) {
-        console.log("[v0] Removing flip for index:", index);
-        next.delete(index);
-      } else {
-        console.log("[v0] Adding flip for index:", index);
-        next.add(index);
-      }
-      console.log("[v0] New flipped set:", Array.from(next));
+      if (next.has(index)) next.delete(index);
+      else next.add(index);
       return next;
     });
   }, []);
@@ -437,10 +428,10 @@ export function DestinationsSection() {
   }, []);
 
   return (
-   <section
-  className="pt-8 pb-12 lg:pt-12 lg:pb-14 bg-[hsl(77_23%_86%)] dark:bg-[hsl(80_19%_25%)]"
-  aria-labelledby="destinations-heading"
->
+    <section
+      className="pt-8 pb-12 lg:pt-12 lg:pb-14 bg-[hsl(77_23%_86%)] dark:bg-[hsl(80_19%_25%)]"
+      aria-labelledby="destinations-heading"
+    >
       <div className="mx-auto max-w-7xl px-4 lg:px-8">
         <div className="text-center mb-8">
           <h2 id="destinations-heading" className="text-3xl font-bold text-foreground sm:text-4xl text-balance">
@@ -481,42 +472,35 @@ export function DestinationsSection() {
 
           {/* viewport */}
           <div
-  ref={viewportRef}
-  className="relative overflow-x-hidden overflow-y-visible py-6"
-  style={{
-    WebkitMaskImage:
-      "linear-gradient(to right, rgba(0,0,0,0) 0%, rgba(0,0,0,1) 1.6%, rgba(0,0,0,1) 98.4%, rgba(0,0,0,0) 100%)",
-    maskImage:
-      "linear-gradient(to right, rgba(0,0,0,0) 0%, rgba(0,0,0,1) 1.6%, rgba(0,0,0,1) 98.4%, rgba(0,0,0,0) 100%)",
-    WebkitMaskRepeat: "no-repeat",
-    maskRepeat: "no-repeat",
-    WebkitMaskSize: "100% 100%",
-    maskSize: "100% 100%",
-  }}
-  onPointerDown={(e) => {
-    dragStartRef.current = { x: e.clientX, y: e.clientY };
-    isDraggingRef.current = false;
-  }}
-  onPointerMove={(e) => {
-    if (dragStartRef.current) {
-      const dx = Math.abs(e.clientX - dragStartRef.current.x);
-      const dy = Math.abs(e.clientY - dragStartRef.current.y);
-      if (dx > 6 || dy > 6) {
-        isDraggingRef.current = true;
-      }
-    }
-  }}
-  onPointerUp={() => {
-    dragStartRef.current = null;
-    isDraggingRef.current = false;
-  }}
->
-            <div
-              ref={trackRef}
-              className="flex gap-6 will-change-transform"
-              style={{ transform: "translate3d(0,0,0)" }}
-              role="list"
-            >
+            ref={viewportRef}
+            className="relative overflow-x-hidden overflow-y-visible py-10"
+            style={{
+              WebkitMaskImage:
+                "linear-gradient(to right, rgba(0,0,0,0) 0%, rgba(0,0,0,1) 1.6%, rgba(0,0,0,1) 98.4%, rgba(0,0,0,0) 100%)",
+              maskImage:
+                "linear-gradient(to right, rgba(0,0,0,0) 0%, rgba(0,0,0,1) 1.6%, rgba(0,0,0,1) 98.4%, rgba(0,0,0,0) 100%)",
+              WebkitMaskRepeat: "no-repeat",
+              maskRepeat: "no-repeat",
+              WebkitMaskSize: "100% 100%",
+              maskSize: "100% 100%",
+            }}
+            onPointerDown={(e) => {
+              dragStartRef.current = { x: e.clientX, y: e.clientY };
+              isDraggingRef.current = false;
+            }}
+            onPointerMove={(e) => {
+              if (dragStartRef.current) {
+                const dx = Math.abs(e.clientX - dragStartRef.current.x);
+                const dy = Math.abs(e.clientY - dragStartRef.current.y);
+                if (dx > 6 || dy > 6) isDraggingRef.current = true;
+              }
+            }}
+            onPointerUp={() => {
+              dragStartRef.current = null;
+              isDraggingRef.current = false;
+            }}
+          >
+            <div ref={trackRef} className="flex gap-6 will-change-transform" style={{ transform: "translate3d(0,0,0)" }} role="list">
               {doubled.map((dest, i) => {
                 const isHovered = hovered === i;
                 const isFlipped = flipped.has(i);
@@ -542,9 +526,7 @@ export function DestinationsSection() {
                       className="relative w-full"
                       style={{
                         transformStyle: "preserve-3d",
-                        transition: prefersReducedMotion 
-                          ? "opacity 0.3s ease-out" 
-                          : "transform 0.45s cubic-bezier(0.4, 0, 0.2, 1)",
+                        transition: prefersReducedMotion ? "opacity 0.3s ease-out" : "transform 0.45s cubic-bezier(0.4, 0, 0.2, 1)",
                         transform: isFlipped ? "rotateY(180deg)" : "rotateY(0deg)",
                         minHeight: "500px",
                       }}
@@ -561,165 +543,148 @@ export function DestinationsSection() {
                           height: "100%",
                         }}
                       >
-                        <Card
-                          className={[
-                            "group relative overflow-hidden rounded-xl backdrop-blur-sm",
-                           "bg-[hsl(77_30%_97%)]",
-                            "dark:bg-[hsl(80_18%_33%)]",
-                            "border-0 outline-none ring-0",
-                            "transition-[transform,box-shadow] duration-200 ease-out",
-                            "shadow-[0_18px_44px_-34px_rgba(0,0,0,0.28)] dark:shadow-[0_22px_54px_-38px_rgba(0,0,0,0.62)]",
+                        {/* OUTER WRAPPER so glow is NOT clipped and no “box line” */}
+                        <div className="relative h-full">
+                          <div
+                            aria-hidden="true"
+                            className={[
+                              "pointer-events-none absolute -inset-10 rounded-[28px] blur-2xl",
+                              "transition-opacity duration-300 ease-out",
+                              "bg-[radial-gradient(60%_60%_at_50%_18%,hsl(var(--primary)/0.38),transparent_70%)]",
+                              isHovered && !isFlipped ? "opacity-100" : "opacity-0",
+                            ].join(" ")}
+                          />
+
+                          <Card
+                            className={[
+                              "relative z-10 group overflow-hidden rounded-xl backdrop-blur-sm h-full",
+                              "bg-[hsl(77_30%_97%)] dark:bg-[hsl(80_18%_33%)]",
+                              "border-0 outline-none ring-0",
+                              "transition-[transform,box-shadow] duration-200 ease-out",
+                              // shadow designed to avoid a “hard baseline”
+                              "shadow-[0_18px_44px_-34px_rgba(0,0,0,0.28)] dark:shadow-[0_22px_54px_-38px_rgba(0,0,0,0.62)]",
                               isHovered && !isFlipped
-                              ? "shadow-[0_28px_78px_-54px_rgba(0,0,0,0.38)] dark:shadow-[0_34px_92px_-62px_rgba(0,0,0,0.78)]"
-                              : "",
-                          ].join(" ")}
-                          role="listitem"
-                          style={
-                            isHovered && !isFlipped && !prefersReducedMotion
-                              ? {
+                                ? "shadow-[0_28px_78px_-54px_rgba(0,0,0,0.38)] dark:shadow-[0_34px_92px_-62px_rgba(0,0,0,0.78)]"
+                                : "",
+                            ].join(" ")}
+                            role="listitem"
+                            style={
+                              isHovered && !isFlipped && !prefersReducedMotion
+                                ? {
                                   transform: `translateY(-0.25rem) scale(1.035) rotateX(${tilt.rx}deg) rotateY(${tilt.ry}deg)`,
                                   transformStyle: "preserve-3d",
                                   willChange: "transform",
                                 }
-                              : undefined
-                          }
-                        >
-                          {/* subtle green bloom */}
-                          <div
-                            aria-hidden="true"
-                             className={[
-                            "pointer-events-none absolute -inset-8 rounded-[28px] blur-2xl",
-                            "transition-opacity duration-300 ease-out",
-                             "bg-[radial-gradient(60%_60%_at_50%_18%,hsl(var(--primary)/0.38),transparent_70%)]",
-                             isHovered && !isFlipped ? "opacity-100" : "opacity-0",
-                            ].join(" ")}
-                          />
+                                : undefined
+                            }
+                          >
+                            {/* Image header */}
+                            <div className="relative h-32 bg-primary/5">
+                              <div className="absolute inset-0 flex items-center justify-center">
+                                <MapPin className="h-10 w-10 text-primary/40" aria-hidden="true" />
+                              </div>
 
-                          {/* Image header */}
-                          <div className="relative h-32 bg-primary/5">
-                            <div className="absolute inset-0 flex items-center justify-center">
-                              <MapPin className="h-10 w-10 text-primary/40" aria-hidden="true" />
-                            </div>
+                              <Image
+                                src={dest.image}
+                                alt={`${dest.country} destination`}
+                                fill
+                                className={[
+                                  "object-cover transition-[transform,filter] duration-450 ease-out",
+                                  isHovered && !isFlipped ? "scale-[1.05] -translate-y-0.5 saturate-[1.04] contrast-[1.02]" : "scale-100 translate-y-0",
+                                ].join(" ")}
+                                sizes="(min-width: 1024px) 380px, (min-width: 640px) 340px, 300px"
+                                priority={dest.country === "Thailand"}
+                              />
 
-                            <Image
-                              src={dest.image}
-                              alt={`${dest.country} destination`}
-                              fill
-                              className={[
-                                "object-cover transition-[transform,filter] duration-450 ease-out",
-                                isHovered && !isFlipped
-                                  ? "scale-[1.05] -translate-y-0.5 saturate-[1.04] contrast-[1.02]"
-                                  : "scale-100 translate-y-0",
-                              ].join(" ")}
-                              sizes="(min-width: 1024px) 380px, (min-width: 640px) 340px, 300px"
-                              priority={dest.country === "Thailand"}
-                            />
-
-                            <div
-                              className={[
-                                "absolute inset-0 bg-gradient-to-t to-transparent transition-opacity duration-450",
-                                isHovered && !isFlipped ? "from-black/22" : "from-black/32",
-                              ].join(" ")}
-                            />
-
-                            {/* Sheen */}
-                            <div
-                              aria-hidden="true"
-                              className={[
-                                "pointer-events-none absolute inset-0 opacity-0 transition-opacity duration-200",
-                                isHovered && !isFlipped ? "opacity-100" : "",
-                              ].join(" ")}
-                            >
                               <div
                                 className={[
-                                  "absolute -inset-y-12 -left-[70%] w-[60%] rotate-12",
-                                  "bg-gradient-to-r from-transparent via-white/14 to-transparent dark:via-white/8",
-                                  "blur-lg",
-                                  isHovered && !isFlipped
-                                    ? "translate-x-[360%] transition-transform duration-[2400ms] ease-out"
-                                    : "translate-x-[0%] transition-transform duration-0",
+                                  "absolute inset-0 bg-gradient-to-t to-transparent transition-opacity duration-450",
+                                  isHovered && !isFlipped ? "from-black/22" : "from-black/32",
                                 ].join(" ")}
                               />
-                            </div>
-                          </div>
 
-                          <CardContent className="p-5">
-                            <div className="flex items-center justify-between mb-3 gap-2">
-                              <h3 className="text-xl font-bold text-foreground">
-                                <span className="relative inline-block">
-                                  {dest.country}
-                                  <span
-                                    aria-hidden="true"
-                                    className={[
-                                      "absolute -bottom-1 left-0 h-[2px] bg-primary/60 transition-all duration-200",
-                                      isHovered && !isFlipped ? "w-full" : "w-0",
-                                    ].join(" ")}
-                                  />
-                                </span>
-                              </h3>
-
-                              <span
-                                className={
-                                  isHovered && !isFlipped
-                                    ? "translate-y-[-1px] transition-transform duration-200"
-                                    : "transition-transform duration-200"
-                                }
+                              {/* Sheen */}
+                              <div
+                                aria-hidden="true"
+                                className={[
+                                  "pointer-events-none absolute inset-0 opacity-0 transition-opacity duration-200",
+                                  isHovered && !isFlipped ? "opacity-100" : "",
+                                ].join(" ")}
                               >
-                                <Badge className="bg-primary/10 text-primary hover:bg-primary/20 border-0">
-                                  {dest.note}
-                                </Badge>
-                              </span>
-                            </div>
-
-                            <p className="text-sm text-muted-foreground leading-relaxed mb-4 min-h-[88px]">
-                              {dest.description}
-                            </p>
-
-                            <div className="flex flex-wrap gap-1.5">
-                              {dest.specialties.slice(0, 3).map((s) => (
-                                <Badge
-                                  key={s}
-                                  variant="secondary"
+                                <div
                                   className={[
-                                    "text-xs transition-[transform,opacity] duration-200",
-                                    isHovered && !isFlipped ? "-translate-y-0.5 opacity-100" : "translate-y-0 opacity-95",
+                                    "absolute -inset-y-12 -left-[70%] w-[60%] rotate-12",
+                                    "bg-gradient-to-r from-transparent via-white/14 to-transparent dark:via-white/8",
+                                    "blur-lg",
+                                    isHovered && !isFlipped
+                                      ? "translate-x-[360%] transition-transform duration-[2400ms] ease-out"
+                                      : "translate-x-[0%] transition-transform duration-0",
                                   ].join(" ")}
-                                >
-                                  {s}
-                                </Badge>
-                              ))}
+                                />
+                              </div>
                             </div>
 
-                            <p className="text-xs text-muted-foreground mt-3 mb-4">
-                              Cities: {dest.cities.join(", ")}
-                            </p>
+                            <CardContent className="p-5">
+                              <div className="flex items-center justify-between mb-3 gap-2">
+                                <h3 className="text-xl font-bold text-foreground">
+                                  <span className="relative inline-block">
+                                    {dest.country}
+                                    <span
+                                      aria-hidden="true"
+                                      className={[
+                                        "absolute -bottom-1 left-0 h-[2px] bg-primary/60 transition-all duration-200",
+                                        isHovered && !isFlipped ? "w-full" : "w-0",
+                                      ].join(" ")}
+                                    />
+                                  </span>
+                                </h3>
 
-                            {/* Flip button */}
-                            <button
-                              type="button"
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                console.log("[v0] Click detected, isDragging:", isDraggingRef.current);
-                                if (!isDraggingRef.current) {
-                                  console.log("[v0] Toggling flip for card", i);
-                                  toggleFlip(i);
-                                }
-                              }}
-                              onKeyDown={(e) => {
-                                if (e.key === "Enter" || e.key === " ") {
-                                  e.preventDefault();
+                                <span className={isHovered && !isFlipped ? "translate-y-[-1px] transition-transform duration-200" : "transition-transform duration-200"}>
+                                  <Badge className="bg-primary/10 text-primary hover:bg-primary/20 border-0">{dest.note}</Badge>
+                                </span>
+                              </div>
+
+                              <p className="text-sm text-muted-foreground leading-relaxed mb-4 min-h-[88px]">{dest.description}</p>
+
+                              <div className="flex flex-wrap gap-1.5">
+                                {dest.specialties.slice(0, 3).map((s) => (
+                                  <Badge
+                                    key={s}
+                                    variant="secondary"
+                                    className={[
+                                      "text-xs transition-[transform,opacity] duration-200",
+                                      isHovered && !isFlipped ? "-translate-y-0.5 opacity-100" : "translate-y-0 opacity-95",
+                                    ].join(" ")}
+                                  >
+                                    {s}
+                                  </Badge>
+                                ))}
+                              </div>
+
+                              <p className="text-xs text-muted-foreground mt-3 mb-4">Cities: {dest.cities.join(", ")}</p>
+
+                              {/* Flip button (no drag gate; always flips) */}
+                              <button
+                                type="button"
+                                onClick={(e) => {
                                   e.stopPropagation();
-                                  console.log("[v0] Keyboard flip for card", i);
                                   toggleFlip(i);
-                                }
-                              }}
-                              className="w-full py-2 px-4 text-sm font-medium text-primary hover:text-primary/80 transition-colors rounded-md hover:bg-primary/5 focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2"
-                              aria-label={`View top spots in ${dest.country}`}
-                            >
-                              View top spots →
-                            </button>
-                          </CardContent>
-                        </Card>
+                                }}
+                                onKeyDown={(e) => {
+                                  if (e.key === "Enter" || e.key === " ") {
+                                    e.preventDefault();
+                                    e.stopPropagation();
+                                    toggleFlip(i);
+                                  }
+                                }}
+                                className="w-full py-2 px-4 text-sm font-medium text-primary hover:text-primary/80 transition-colors rounded-md hover:bg-primary/5 focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2"
+                                aria-label={`View top spots in ${dest.country}`}
+                              >
+                                View top spots →
+                              </button>
+                            </CardContent>
+                          </Card>
+                        </div>
                       </div>
 
                       {/* Back side */}
@@ -735,70 +700,71 @@ export function DestinationsSection() {
                           height: "100%",
                         }}
                       >
-                        <Card
-                          className={[
-                            "relative overflow-hidden rounded-xl backdrop-blur-sm h-full",
-                           "bg-[hsl(77_30%_97%)]",
-                            "dark:bg-[hsl(80_18%_33%)]",
-                            "border-0 outline-none ring-0",
-                            "shadow-[0_18px_44px_-34px_rgba(0,0,0,0.28)] dark:shadow-[0_22px_54px_-38px_rgba(0,0,0,0.62)]",
-                          ].join(" ")}
-                        >
-                          <CardContent className="p-5 h-full flex flex-col">
-                            <div className="flex items-center justify-between mb-4">
-                              <h3 className="text-xl font-bold text-foreground">
-                                {dest.country}
-                              </h3>
-                              <Badge className="bg-primary/10 text-primary border-0">
-                                Top Spots
-                              </Badge>
-                            </div>
+                        {/* wrapper so back also looks “glowy” and consistent */}
+                        <div className="relative h-full">
+                          <div
+                            aria-hidden="true"
+                            className={[
+                              "pointer-events-none absolute -inset-10 rounded-[28px] blur-2xl",
+                              "transition-opacity duration-300 ease-out",
+                              "bg-[radial-gradient(60%_60%_at_50%_18%,hsl(var(--primary)/0.30),transparent_70%)]",
+                              isHovered ? "opacity-100" : "opacity-0",
+                            ].join(" ")}
+                          />
 
-                            <div className="flex-1">
-                              <p className="text-sm font-semibold text-foreground mb-3">
-                                Things to explore:
-                              </p>
-                              <ul className="space-y-2.5 mb-4">
-                                {dest.topSpots.map((spot, idx) => (
-                                  <li key={idx} className="flex items-start gap-2 text-sm text-muted-foreground">
-                                    <span className="text-primary shrink-0 mt-0.5">•</span>
-                                    <span>{spot}</span>
-                                  </li>
-                                ))}
-                              </ul>
+                          <Card
+                            className={[
+                              "relative z-10 overflow-hidden rounded-xl backdrop-blur-sm h-full",
+                              "bg-[hsl(77_30%_97%)] dark:bg-[hsl(80_18%_33%)]",
+                              "border-0 outline-none ring-0",
+                              "shadow-[0_18px_44px_-34px_rgba(0,0,0,0.28)] dark:shadow-[0_22px_54px_-38px_rgba(0,0,0,0.62)]",
+                            ].join(" ")}
+                          >
+                            <CardContent className="p-5 h-full flex flex-col">
+                              <div className="flex items-center justify-between mb-4">
+                                <h3 className="text-xl font-bold text-foreground">{dest.country}</h3>
+                                <Badge className="bg-primary/10 text-primary border-0">Top Spots</Badge>
+                              </div>
 
-                              <p className="text-xs text-muted-foreground border-t border-border pt-3">
-                                <span className="font-semibold text-foreground">Cities:</span> {dest.cities.join(", ")}
-                              </p>
-                            </div>
+                              <div className="flex-1">
+                                <p className="text-sm font-semibold text-foreground mb-3">Things to explore:</p>
+                                <ul className="space-y-2.5 mb-4">
+                                  {dest.topSpots.map((spot, idx) => (
+                                    <li key={idx} className="flex items-start gap-2 text-sm text-muted-foreground">
+                                      <span className="text-primary shrink-0 mt-0.5">•</span>
+                                      <span>{spot}</span>
+                                    </li>
+                                  ))}
+                                </ul>
 
-                            {/* Back button */}
-                            <button
-                              type="button"
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                console.log("[v0] Back click, isDragging:", isDraggingRef.current);
-                                if (!isDraggingRef.current) {
-                                  console.log("[v0] Toggling back for card", i);
-                                  toggleFlip(i);
-                                }
-                              }}
-                              onKeyDown={(e) => {
-                                if (e.key === "Enter" || e.key === " ") {
-                                  e.preventDefault();
+                                <p className="text-xs text-muted-foreground border-t border-border pt-3">
+                                  <span className="font-semibold text-foreground">Cities:</span> {dest.cities.join(", ")}
+                                </p>
+                              </div>
+
+                              {/* Back button (always flips back) */}
+                              <button
+                                type="button"
+                                onClick={(e) => {
                                   e.stopPropagation();
-                                  console.log("[v0] Keyboard back for card", i);
                                   toggleFlip(i);
-                                }
-                              }}
-                              className="mt-4 w-full py-2 px-4 text-sm font-medium text-primary hover:text-primary/80 transition-colors rounded-md hover:bg-primary/5 flex items-center justify-center gap-2 focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2"
-                              aria-label={`Go back to ${dest.country} overview`}
-                            >
-                              <RotateCcw className="h-4 w-4" aria-hidden="true" />
-                              Back to overview
-                            </button>
-                          </CardContent>
-                        </Card>
+                                }}
+                                onKeyDown={(e) => {
+                                  if (e.key === "Enter" || e.key === " ") {
+                                    e.preventDefault();
+                                    e.stopPropagation();
+                                    toggleFlip(i);
+                                  }
+                                }}
+                                className="mt-4 w-full py-2 px-4 text-sm font-medium text-primary hover:text-primary/80 transition-colors rounded-md hover:bg-primary/5 flex items-center justify-center gap-2 focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2"
+                                aria-label={`Go back to ${dest.country} overview`}
+                              >
+                                <RotateCcw className="h-4 w-4" aria-hidden="true" />
+                                Back to overview
+                              </button>
+                            </CardContent>
+                          </Card>
+                        </div>
                       </div>
                     </div>
                   </div>
