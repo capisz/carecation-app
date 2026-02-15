@@ -509,7 +509,6 @@ export function DestinationsSection() {
                 const isFlipped = flipped.has(i);
 
                 return (
-                  {/* Outer: perspective wrapper */}
                   <div
                     key={i}
                     className="inline-block flex-shrink-0 align-top w-[300px] md:w-[340px] lg:w-[380px] px-2 perspective-1000"
@@ -536,28 +535,6 @@ export function DestinationsSection() {
                       {/* Front face: backface-hidden, absolute positioned */}
                       <div
                         className="backface-hidden absolute inset-0 w-full h-full"
-                      >
-                    {/* Flip container */}
-                    <div
-                      className="relative w-full"
-                      style={{
-                        transformStyle: "preserve-3d",
-                        transition: prefersReducedMotion ? "opacity 0.3s ease-out" : "transform 0.45s cubic-bezier(0.4, 0, 0.2, 1)",
-                        transform: isFlipped ? "rotateY(180deg)" : "rotateY(0deg)",
-                        minHeight: "500px",
-                      }}
-                    >
-                      {/* Front side */}
-                      <div
-                        style={{
-                          backfaceVisibility: "hidden",
-                          WebkitBackfaceVisibility: "hidden",
-                          position: "absolute",
-                          top: 0,
-                          left: 0,
-                          width: "100%",
-                          height: "100%",
-                        }}
                       >
                         {/* OUTER WRAPPER so glow is NOT clipped and no “box line” */}
                         <div className="relative h-full">
