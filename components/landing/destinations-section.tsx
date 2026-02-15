@@ -307,6 +307,10 @@ export function DestinationsSection() {
     });
   }, []);
 
+  useEffect(() => {
+    console.log("[v0] flipped set:", [...flipped]);
+  }, [flipped]);
+
   const clampLoop = useCallback(() => {
     const loopW = loopWRef.current;
     if (!loopW) return;
@@ -511,7 +515,7 @@ export function DestinationsSection() {
                 return (
                   <div
                     key={i}
-                    className="inline-block flex-shrink-0 align-top w-[300px] md:w-[340px] lg:w-[380px] px-2 perspective-1000"
+                    className="inline-block flex-shrink-0 align-top w-[300px] md:w-[340px] lg:w-[380px] px-2 flip-perspective"
                     onMouseEnter={() => {
                       setHovered(i);
                       pausedRef.current = true;
@@ -523,19 +527,16 @@ export function DestinationsSection() {
                     }}
                     onMouseMove={isHovered && !isFlipped ? handleTiltMove : undefined}
                   >
-                    {/* Inner: transform container with preserve-3d, rotates on flip */}
+                    {/* Inner: preserve-3d container; toggles rotateY via .is-flipped */}
                     <div
                       className={[
-                        "relative w-full preserve-3d",
-                        prefersReducedMotion ? "flip-card-transition-reduced" : "flip-card-transition",
-                        isFlipped ? "rotate-y-180" : "",
+                        "relative w-full flip-inner",
+                        isFlipped ? "is-flipped" : "",
                       ].join(" ")}
                       style={{ minHeight: "500px" }}
                     >
-                      {/* Front face: backface-hidden, absolute positioned */}
-                      <div
-                        className="backface-hidden absolute inset-0 w-full h-full"
-                      >
+                      {/* Front face */}
+                      <div className="flip-face absolute inset-0 w-full h-full">
                         {/* OUTER WRAPPER so glow is NOT clipped and no “box line” */}
                         <div className="relative h-full">
                           <div
@@ -565,7 +566,6 @@ export function DestinationsSection() {
                               isHovered && !isFlipped && !prefersReducedMotion
                                 ? {
                                   transform: `translateY(-0.25rem) scale(1.035) rotateX(${tilt.rx}deg) rotateY(${tilt.ry}deg)`,
-                                  transformStyle: "preserve-3d",
                                   willChange: "transform",
                                 }
                                 : undefined
@@ -680,10 +680,8 @@ export function DestinationsSection() {
                         </div>
                       </div>
 
-                      {/* Back face: backface-hidden, absolute positioned, rotated 180deg */}
-                      <div
-                        className="backface-hidden rotate-y-180 absolute inset-0 w-full h-full"
-                      >
+                      {/* Back face */}
+                      <div className="flip-face flip-back absolute inset-0 w-full h-full">
                         {/* wrapper so back also looks “glowy” and consistent */}
                         <div className="relative h-full">
                           <div

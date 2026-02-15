@@ -91,30 +91,27 @@
     text-wrap: balance;
   }
 
-  /* 3D Flip Card Utilities */
-  .perspective-1000 {
+  /* 3D Flip Card System */
+  .flip-perspective {
     perspective: 1000px;
   }
 
-  .preserve-3d {
+  .flip-inner {
     transform-style: preserve-3d;
+    transition: transform 500ms cubic-bezier(0.2, 0.8, 0.2, 1);
   }
 
-  .backface-hidden {
+  .flip-inner.is-flipped {
+    transform: rotateY(180deg);
+  }
+
+  .flip-face {
     backface-visibility: hidden;
     -webkit-backface-visibility: hidden;
   }
 
-  .rotate-y-180 {
+  .flip-back {
     transform: rotateY(180deg);
-  }
-
-  .flip-card-transition {
-    transition: transform 0.6s cubic-bezier(0.4, 0, 0.2, 1);
-  }
-
-  .flip-card-transition-reduced {
-    transition: opacity 0.3s ease-out;
   }
 }
 
