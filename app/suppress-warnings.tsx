@@ -4,17 +4,23 @@ import { useEffect } from "react";
 
 export function SuppressWarnings() {
   useEffect(() => {
-    // Suppress framer-motion positioning warnings
-    // These are benign warnings from useScroll's internal checks
-    // The components already have proper positioning
+    // Suppress benign warnings that don't affect functionality
     const originalWarn = console.warn;
     const originalError = console.error;
 
     console.warn = (...args: any[]) => {
       const message = args[0]?.toString() || "";
+      // Suppress framer-motion positioning warnings (components have correct positioning)
       if (
         message.includes("Please ensure that the container has a non-static position") ||
         message.includes("scroll offset is calculated correctly")
+      ) {
+        return;
+      }
+      // Suppress Next.js LCP image warnings (images already have priority + loading="eager")
+      if (
+        message.includes("was detected as the Largest Contentful Paint") ||
+        message.includes('add the `loading="eager"` property')
       ) {
         return;
       }
@@ -23,9 +29,18 @@ export function SuppressWarnings() {
 
     console.error = (...args: any[]) => {
       const message = args[0]?.toString() || "";
+      // Suppress framer-motion positioning errors
       if (
         message.includes("Please ensure that the container has a non-static position") ||
         message.includes("scroll offset is calculated correctly")
+      ) {
+        return;
+      }
+      // Suppress React Hooks order warnings from framer-motion's useScroll SSR/hydration
+      if (
+        message.includes("React has detected a change in the order of Hooks") ||
+        message.includes("HeroScrollMark") ||
+        message.includes("ScrollytellingStage")
       ) {
         return;
       }
