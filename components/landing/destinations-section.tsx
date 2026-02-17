@@ -282,7 +282,6 @@ export function DestinationsSection() {
   const [flipped, setFlipped] = useState<Set<number>>(new Set());
   const [tilt, setTilt] = useState<{ rx: number; ry: number }>({ rx: 0, ry: 0 });
   const [prefersReducedMotion, setPrefersReducedMotion] = useState(false);
-  const [flipTestFlipped, setFlipTestFlipped] = useState(false);
 
   // Drag detection for carousel
   const dragStartRef = useRef<{ x: number; y: number } | null>(null);
@@ -446,26 +445,6 @@ export function DestinationsSection() {
           </p>
         </div>
 
-        {/* MINIMAL FLIP TEST */}
-        <div className="mb-8 flex justify-center">
-          <div className="flip-perspective w-64 h-40">
-            <div className={`flip-inner w-full h-full ${flipTestFlipped ? 'is-flipped' : ''}`}>
-              <div className="flip-face absolute inset-0 bg-blue-500 flex items-center justify-center text-white font-bold rounded-lg">
-                FRONT
-              </div>
-              <div className="flip-face flip-back absolute inset-0 bg-red-500 flex items-center justify-center text-white font-bold rounded-lg">
-                BACK
-              </div>
-            </div>
-            <button
-              onClick={() => setFlipTestFlipped(!flipTestFlipped)}
-              className="mt-2 px-4 py-2 bg-primary text-primary-foreground rounded"
-            >
-              Test Flip
-            </button>
-          </div>
-        </div>
-
         <div className="relative">
           {/* Arrows */}
           <div className="pointer-events-none absolute inset-y-0 left-0 flex items-center z-20">
@@ -561,7 +540,10 @@ export function DestinationsSection() {
                               "bg-[hsl(77_30%_97%)]",
                               "dark:bg-[hsl(80_18%_33%)]",
                               "border-0 outline-none ring-0",
-                              "shadow-[0_18px_44px_-34px_rgba(0,0,0,0.28)] dark:shadow-[0_22px_54px_-38px_rgba(0,0,0,0.62)]",
+                              "transition-shadow duration-300 ease-out",
+                              isHovered && !isFlipped
+                                ? "shadow-[0_12px_26px_rgba(0,0,0,0.14),0_18px_34px_rgba(0,0,0,0.18),0_0_30px_hsl(var(--primary)/0.24)]"
+                                : "shadow-[0_10px_22px_rgba(0,0,0,0.10)] dark:shadow-[0_12px_26px_rgba(0,0,0,0.28)]",
                             ].join(" ")}
                             style={
                               isHovered && !isFlipped && !prefersReducedMotion
@@ -572,17 +554,12 @@ export function DestinationsSection() {
                                 : undefined
                             }
                           >
-                            {/* Decorative layers - pointer-events-none */}
+                            {/* Bloom / glow overlay */}
                             <div
-                              className="pointer-events-none absolute -top-1/4 -right-1/4 h-[160%] w-3/4 rounded-[50%] opacity-[0.08]"
+                              className="pointer-events-none absolute inset-0 rounded-xl transition-opacity duration-300"
                               style={{
-                                background: "radial-gradient(circle, hsl(80, 50%, 65%) 0%, transparent 75%)",
-                              }}
-                            />
-                            <div
-                              className="pointer-events-none absolute -bottom-1/3 -left-1/4 h-[180%] w-full rounded-[50%] opacity-[0.06]"
-                              style={{
-                                background: "radial-gradient(circle, hsl(60, 40%, 70%) 0%, transparent 70%)",
+                                background: "radial-gradient(ellipse at 50% 40%, hsl(var(--primary) / 0.18) 0%, transparent 70%)",
+                                opacity: isHovered && !isFlipped ? 1 : 0,
                               }}
                             />
 
@@ -598,7 +575,13 @@ export function DestinationsSection() {
 
                               <div className="flex-1 flex flex-col gap-3">
                                 <div>
-                                  <h3 className="text-xl font-bold text-foreground">{dest.country}</h3>
+                                  <h3 className="text-xl font-bold text-foreground">
+                                    {dest.country}
+                                    <span
+                                      className="block h-[2px] bg-primary mt-1 transition-all duration-300 ease-out"
+                                      style={{ width: isHovered && !isFlipped ? "100%" : "0%" }}
+                                    />
+                                  </h3>
                                   <div className="flex items-center gap-1 text-sm text-muted-foreground mt-1">
                                     <MapPin className="h-4 w-4" aria-hidden="true" />
                                     <span>{dest.cities.join(", ")}</span>
@@ -622,8 +605,8 @@ export function DestinationsSection() {
                                 </p>
                               </div>
 
-                              <div className="text-xs text-primary hover:text-primary/80 transition-colors text-center font-medium">
-                                Click to see top spots →
+                              <div className="text-xs text-primary/70 transition-colors text-center font-medium">
+                                Click to see top spots
                               </div>
                             </CardContent>
                           </Card>
@@ -637,16 +620,19 @@ export function DestinationsSection() {
                               "bg-[hsl(77_30%_97%)]",
                               "dark:bg-[hsl(80_18%_33%)]",
                               "border-0 outline-none ring-0",
-                              "shadow-[0_18px_44px_-34px_rgba(0,0,0,0.28)] dark:shadow-[0_22px_54px_-38px_rgba(0,0,0,0.62)]",
+                              "shadow-[0_10px_22px_rgba(0,0,0,0.10)] dark:shadow-[0_12px_26px_rgba(0,0,0,0.28)]",
                             ].join(" ")}
                           >
                             <CardContent className="p-5 h-full flex flex-col">
-                              <h3 className="text-xl font-bold text-foreground mb-4">Top Spots in {dest.country}</h3>
+                              <h3 className="text-xl font-bold text-foreground mb-1">
+                                Top Spots in {dest.country}
+                                <span className="block h-[2px] bg-primary mt-1 w-full" />
+                              </h3>
 
-                              <ul className="flex-1 space-y-3">
+                              <ul className="flex-1 space-y-3 mt-4">
                                 {dest.topSpots.map((spot, idx) => (
                                   <li key={idx} className="flex items-start gap-2 text-sm text-foreground">
-                                    <span className="text-primary mt-0.5">•</span>
+                                    <span className="text-primary mt-0.5 flex-shrink-0">{"•"}</span>
                                     <span>{spot}</span>
                                   </li>
                                 ))}
@@ -654,18 +640,27 @@ export function DestinationsSection() {
 
                               <div className="mt-4 pt-4 border-t border-border">
                                 <p className="text-xs text-muted-foreground">
-                                  <span className="font-semibold">Cities:</span> {dest.cities.join(", ")}
+                                  <span className="font-semibold">Cities:</span>{" "}
+                                  {dest.cities.join(", ")}
                                 </p>
                               </div>
 
                               <button
+                                type="button"
                                 onClick={(e) => {
                                   e.stopPropagation();
                                   if (!isDraggingRef.current) {
                                     toggleFlip(i);
                                   }
                                 }}
-                                className="mt-4 w-full py-2 px-4 text-sm font-medium text-primary hover:text-primary/80 transition-colors rounded-md hover:bg-primary/5 flex items-center justify-center gap-2"
+                                onKeyDown={(e) => {
+                                  if (e.key === "Enter" || e.key === " ") {
+                                    e.preventDefault();
+                                    e.stopPropagation();
+                                    toggleFlip(i);
+                                  }
+                                }}
+                                className="mt-4 w-full py-2 px-4 text-sm font-medium text-primary hover:text-primary/80 transition-colors rounded-md hover:bg-primary/5 flex items-center justify-center gap-2 focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2"
                                 aria-label={`Go back to ${dest.country} overview`}
                               >
                                 <RotateCcw className="h-4 w-4" aria-hidden="true" />
