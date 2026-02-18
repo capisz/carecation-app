@@ -91,28 +91,7 @@
     text-wrap: balance;
   }
 
-  /* 3D Flip Card System */
-  .flip-perspective {
-    perspective: 1000px;
-  }
 
-  .flip-inner {
-    transform-style: preserve-3d;
-    transition: transform 500ms cubic-bezier(0.2, 0.8, 0.2, 1);
-  }
-
-  .flip-inner.is-flipped {
-    transform: rotateY(180deg);
-  }
-
-  .flip-face {
-    backface-visibility: hidden;
-    -webkit-backface-visibility: hidden;
-  }
-
-  .flip-back {
-    transform: rotateY(180deg);
-  }
 }
 
 @media (prefers-reduced-motion: reduce) {
