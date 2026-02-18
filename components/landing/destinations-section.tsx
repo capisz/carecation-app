@@ -412,8 +412,8 @@ export function DestinationsSection() {
                         }}
                       />
 
-                      <CardContent className="p-5 flex flex-col gap-3 relative z-10">
-                        <div className="relative h-40 rounded-lg overflow-hidden">
+                      <CardContent className="p-0 flex flex-col relative z-10">
+                        <div className="relative h-40 overflow-hidden rounded-t-xl">
                           <Image
                             src={dest.image}
                             alt={`${dest.country} destination`}
@@ -421,6 +421,8 @@ export function DestinationsSection() {
                             className="object-cover"
                           />
                         </div>
+
+                        <div className="p-5 flex flex-col gap-3">
 
                         <div className="flex-1 flex flex-col gap-3">
                           <div>
@@ -452,6 +454,7 @@ export function DestinationsSection() {
                           <p className="text-sm text-muted-foreground leading-relaxed line-clamp-4">
                             {dest.description}
                           </p>
+                        </div>
                         </div>
                       </CardContent>
                     </Card>
