@@ -12,10 +12,8 @@ import { useTheme } from "next-themes";
 import { useOverlay } from "./overlay/overlay-provider";
 
 const navLinks = [
-  { href: "/", label: "Home" },
-  { href: "/intake", label: "Plan Trip" },
-  { href: "/results", label: "Providers" },
-  { href: "/admin/providers", label: "Admin" },
+  { href: "/clinics", label: "Browse Clinics" },
+  { href: "/travel", label: "Browse Travel Options" },
 ];
 
 export function AppShell({ children }: { children: React.ReactNode }) {
