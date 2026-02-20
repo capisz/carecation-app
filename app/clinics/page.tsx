@@ -84,11 +84,11 @@ export default function ClinicsPage() {
                 placeholder="Search clinics, procedures, or locations..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="pl-9"
+                className="pl-9 bg-background"
                 aria-label="Search clinics"
               />
             </div>
-            <Button variant="outline">
+            <Button>
               <Building2 className="h-4 w-4 mr-2" aria-hidden="true" />
               Filters
             </Button>
@@ -144,7 +144,7 @@ export default function ClinicsPage() {
                   </div>
                 </div>
 
-                <Button variant="outline" className="w-full">
+                <Button className="w-full">
                   View Details
                 </Button>
               </CardContent>
