@@ -901,6 +901,29 @@ function TravelPageContent() {
             <Badge variant="secondary">{flights.length} found</Badge>
           </div>
 
+          {hasSearched && (
+            <div className="mb-4 flex flex-col gap-2 sm:flex-row sm:justify-end">
+              <Button asChild size="sm">
+                <Link href="/itinerary">View itinerary</Link>
+              </Button>
+              <Button
+                type="button"
+                size="sm"
+                onClick={handleContinueToHotels}
+                disabled={!hotelsHref || !selectedFlight || isContinuingToHotels}
+              >
+                {isContinuingToHotels ? (
+                  <>
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    Saving flight...
+                  </>
+                ) : (
+                  "Next: Choose Hotels"
+                )}
+              </Button>
+            </div>
+          )}
+
           {isSearching && (
             <div className="rounded-lg border border-border bg-card p-6 text-sm text-muted-foreground">
               Loading flight offers...
@@ -915,7 +938,7 @@ function TravelPageContent() {
 
           {!isSearching && flights.length > 0 && (
             <>
-              <div className="grid gap-4 lg:grid-cols-2">
+              <div className="grid gap-3 lg:grid-cols-2 xl:grid-cols-3">
                 {visibleFlights.map((flight) => {
                   const outbound =
                     flight.itineraries.find((itinerary) => itinerary.leg === "outbound") ??
@@ -948,21 +971,21 @@ function TravelPageContent() {
                     <Card
                       key={flight.id}
                       className={cn(
-                        "shadow-sm transition-all hover:shadow-lg",
+                        "shadow-sm transition-all hover:shadow-md",
                         isSelected && "border-primary ring-1 ring-primary/50",
                       )}
                     >
-                      <CardContent className="p-5">
-                        <div className="mb-3 flex items-start justify-between gap-3">
+                      <CardContent className="p-4">
+                        <div className="mb-2 flex items-start justify-between gap-2">
                           <div>
                             <p className="text-xs uppercase tracking-wide text-muted-foreground">
                               Total in USD
                             </p>
-                            <p className="text-2xl font-semibold text-foreground">
+                            <p className="text-xl font-semibold text-foreground">
                               {usdPrimaryText}
                             </p>
                             {normalizedCurrency !== "USD" && (
-                              <p className="mt-1 text-xs text-muted-foreground">
+                              <p className="mt-0.5 text-[11px] text-muted-foreground">
                                 Original: {formatPrice(flight.totalPrice, flight.currency)}
                                 {conversionError ? " • USD conversion unavailable" : ""}
                               </p>
@@ -975,20 +998,20 @@ function TravelPageContent() {
                         </div>
 
                         {outboundFirst && outboundLast && (
-                          <div className="mb-4 rounded-md border border-border bg-background p-3">
-                            <p className="mb-1 text-sm font-medium text-foreground">
+                          <div className="mb-2 rounded-md border border-border bg-background p-2.5">
+                            <p className="mb-0.5 text-sm font-medium text-foreground">
                               Outbound: {outboundFirst.departureIata} → {outboundLast.arrivalIata}
                             </p>
-                            <p className="text-sm text-muted-foreground">
+                            <p className="text-xs text-muted-foreground">
                               {formatDateTime(outboundFirst.departureAt)} -{" "}
                               {formatDateTime(outboundLast.arrivalAt)}
                             </p>
-                            <p className="mt-1 text-xs text-muted-foreground">
+                            <p className="mt-0.5 text-xs text-muted-foreground">
                               {outbound.duration} • {outbound.stops} stop
                               {outbound.stops === 1 ? "" : "s"}
                             </p>
                             {outboundSegments.length > 0 && (
-                              <p className="mt-1 text-xs text-muted-foreground">
+                              <p className="mt-0.5 truncate text-[11px] text-muted-foreground">
                                 {outboundSegments
                                   .map(
                                     (segment) =>
@@ -1001,20 +1024,20 @@ function TravelPageContent() {
                         )}
 
                         {inboundFirst && inboundLast && (
-                          <div className="mb-4 rounded-md border border-border bg-background p-3">
-                            <p className="mb-1 text-sm font-medium text-foreground">
+                          <div className="mb-2 rounded-md border border-border bg-background p-2.5">
+                            <p className="mb-0.5 text-sm font-medium text-foreground">
                               Return: {inboundFirst.departureIata} → {inboundLast.arrivalIata}
                             </p>
-                            <p className="text-sm text-muted-foreground">
+                            <p className="text-xs text-muted-foreground">
                               {formatDateTime(inboundFirst.departureAt)} -{" "}
                               {formatDateTime(inboundLast.arrivalAt)}
                             </p>
-                            <p className="mt-1 text-xs text-muted-foreground">
+                            <p className="mt-0.5 text-xs text-muted-foreground">
                               {inbound?.duration ?? "—"} • {inbound?.stops ?? 0} stop
                               {(inbound?.stops ?? 0) === 1 ? "" : "s"}
                             </p>
                             {inboundSegments.length > 0 && (
-                              <p className="mt-1 text-xs text-muted-foreground">
+                              <p className="mt-0.5 truncate text-[11px] text-muted-foreground">
                                 {inboundSegments
                                   .map(
                                     (segment) =>
@@ -1026,15 +1049,15 @@ function TravelPageContent() {
                           </div>
                         )}
 
-                        <div className="mb-4 flex flex-wrap gap-2 text-xs text-muted-foreground">
+                        <div className="mb-3 flex flex-wrap gap-1.5 text-[11px] text-muted-foreground">
                           {flight.bookableSeats !== null && (
-                            <span className="inline-flex items-center gap-1 rounded-md bg-muted px-2 py-1">
+                            <span className="inline-flex items-center gap-1 rounded-md bg-muted px-2 py-0.5">
                               <Calendar className="h-3 w-3" />
                               {flight.bookableSeats} seat(s) left
                             </span>
                           )}
                           {flight.lastTicketingDate && (
-                            <span className="inline-flex items-center gap-1 rounded-md bg-muted px-2 py-1">
+                            <span className="inline-flex items-center gap-1 rounded-md bg-muted px-2 py-0.5">
                               <Clock className="h-3 w-3" />
                               Ticket by {flight.lastTicketingDate}
                             </span>
@@ -1044,7 +1067,7 @@ function TravelPageContent() {
                         <Button
                           type="button"
                           variant={isSelected ? "default" : "outline"}
-                          className="w-full"
+                          className="h-9 w-full"
                           onClick={() => setSelectedFlightId(flight.id)}
                         >
                           {isSelected ? (
@@ -1073,27 +1096,14 @@ function TravelPageContent() {
                   </Button>
                 </div>
               )}
-            </>
-          )}
-        </section>
 
-        {hasSearched && (
-          <Card className="mt-8 border-primary/20">
-            <CardContent className="flex flex-col gap-4 p-5 sm:flex-row sm:items-center sm:justify-between">
-              <div>
-                <h3 className="text-lg font-semibold text-foreground">Continue your plan</h3>
-                <p className="text-sm text-muted-foreground">
-                  Your selected flight will be added automatically when you continue.
-                </p>
-              </div>
-
-              <div className="flex flex-col gap-2 sm:w-auto">
-                <Button asChild>
+              <div className="mt-6 flex flex-col gap-2 sm:flex-row sm:justify-end">
+                <Button asChild size="sm">
                   <Link href="/itinerary">View itinerary</Link>
                 </Button>
-
                 <Button
                   type="button"
+                  size="sm"
                   onClick={handleContinueToHotels}
                   disabled={!hotelsHref || !selectedFlight || isContinuingToHotels}
                 >
@@ -1103,13 +1113,13 @@ function TravelPageContent() {
                       Saving flight...
                     </>
                   ) : (
-                    "Choose hotels"
+                    "Next: Choose Hotels"
                   )}
                 </Button>
               </div>
-            </CardContent>
-          </Card>
-        )}
+            </>
+          )}
+        </section>
       </div>
       <Toaster />
     </AppShell>

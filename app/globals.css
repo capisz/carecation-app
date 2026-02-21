@@ -99,6 +99,20 @@
 }
 
 @layer components {
+  .btn-primary-light {
+    background-color: var(--primary-pair-right);
+    border-color: var(--primary-pair-right-border);
+    color: hsl(var(--primary-foreground));
+  }
+
+  .btn-primary-light:hover,
+  .btn-primary-light:focus-visible,
+  .btn-primary-light:active {
+    background-color: var(--primary-pair-right-hover);
+    border-color: var(--primary-pair-right-hover);
+    color: hsl(var(--primary-foreground));
+  }
+
   :is(.flex:not([class*="flex-col"]), .inline-flex:not([class*="flex-col"]), .grid):has(> [data-button="true"][data-variant="default"] + [data-button="true"][data-variant="default"]) > [data-button="true"][data-variant="default"]:has(+ [data-button="true"][data-variant="default"]) {
     background-color: var(--primary-pair-left);
     border-color: var(--primary-pair-left-border);

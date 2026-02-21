@@ -191,14 +191,6 @@ export function BrowseCareContent() {
   return (
     <div className="mx-auto max-w-7xl px-4 py-8 lg:px-8 lg:py-12">
       <div className="mb-8 space-y-2 sm:space-y-3">
-        <Button
-          type="button"
-          className="mb-3"
-          onClick={() => router.back()}
-        >
-          <ArrowLeft className="mr-2 h-4 w-4" />
-          Back to hotels
-        </Button>
         <h1 className="text-3xl font-bold text-foreground sm:text-4xl text-balance">
           Browse Care
         </h1>
@@ -271,6 +263,18 @@ export function BrowseCareContent() {
           <Badge variant="outline">Orthopedic</Badge>
           <Badge variant="outline">Cardiology</Badge>
         </div>
+      </div>
+
+      <div className="mb-6">
+        <Button
+          type="button"
+          size="sm"
+          className="btn-primary-light"
+          onClick={() => router.back()}
+        >
+          <ArrowLeft className="mr-2 h-4 w-4" />
+          Back to hotels
+        </Button>
       </div>
 
       <div

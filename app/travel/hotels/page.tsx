@@ -355,6 +355,32 @@ function HotelsPageContent() {
           )}
         </div>
 
+        <div className="mb-6 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+          <Button asChild size="sm" className="btn-primary-light">
+            <Link href="/travel">Back to flights</Link>
+          </Button>
+          <div className="flex flex-col gap-2 sm:flex-row sm:justify-end">
+            <Button asChild size="sm">
+              <Link href="/itinerary">View itinerary</Link>
+            </Button>
+            <Button
+              type="button"
+              size="sm"
+              onClick={handleContinueToCare}
+              disabled={!selectedHotel || isContinuingToCare}
+            >
+              {isContinuingToCare ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  Saving hotel...
+                </>
+              ) : (
+                "Next: Select care clinic"
+              )}
+            </Button>
+          </div>
+        </div>
+
         {error && (
           <div className="mb-8 flex items-start gap-2 rounded-lg border border-destructive/30 bg-destructive/10 px-4 py-3 text-sm text-destructive">
             <AlertCircle className="mt-0.5 h-4 w-4 shrink-0" />
@@ -383,7 +409,7 @@ function HotelsPageContent() {
 
         {!isLoadingHotels && hotels.length > 0 && (
           <>
-            <div className="mb-8 grid gap-4 lg:grid-cols-2">
+            <div className="mb-8 grid gap-3 lg:grid-cols-2 xl:grid-cols-3">
               {visibleHotels.map((hotel) => {
                 const isSelected = selectedHotelId === hotel.id;
                 const imageCandidates = getHotelImageCandidates(hotel.name);
@@ -407,13 +433,13 @@ function HotelsPageContent() {
                   <Card
                     key={hotel.id}
                     className={cn(
-                      "overflow-hidden shadow-sm transition-all hover:shadow-lg",
+                      "overflow-hidden shadow-sm transition-all hover:shadow-md",
                       isSelected && "border-primary ring-1 ring-primary/50",
                     )}
                   >
                     <CardContent className="p-0">
                       {/* Borderless top image area for /public/hotels/<Hotel-Name>.jpg */}
-                      <div className="relative h-44 w-full overflow-hidden">
+                      <div className="relative h-36 w-full overflow-hidden">
                         {/* eslint-disable-next-line @next/next/no-img-element */}
                         <img
                           src={imageSrc}
@@ -428,11 +454,13 @@ function HotelsPageContent() {
                         />
                       </div>
 
-                      <div className="p-5">
-                        <div className="mb-2 flex items-start justify-between gap-3">
+                      <div className="p-4">
+                        <div className="mb-1.5 flex items-start justify-between gap-2">
                           <div>
-                            <p className="text-lg font-semibold text-foreground">{hotel.name}</p>
-                            <p className="text-sm text-muted-foreground">
+                            <p className="line-clamp-2 text-base font-semibold text-foreground">
+                              {hotel.name}
+                            </p>
+                            <p className="text-xs text-muted-foreground">
                               {hotel.cityCode}
                               {hotel.rating !== null ? ` • ${hotel.rating}/5` : ""}
                             </p>
@@ -446,39 +474,39 @@ function HotelsPageContent() {
                         <p className="mb-1 text-xs uppercase tracking-wide text-muted-foreground">
                           Total in USD
                         </p>
-                        <p className="mb-2 text-2xl font-semibold text-foreground">
+                        <p className="mb-1.5 text-xl font-semibold text-foreground">
                           {usdPrimaryText}
                         </p>
                         {normalizedCurrency !== "USD" && (
-                          <p className="mb-2 text-sm text-muted-foreground">
+                          <p className="mb-1.5 text-[11px] text-muted-foreground">
                             Original: {formatPrice(hotel.totalPrice, hotel.currency)}
                             {conversionError ? " • USD conversion unavailable" : ""}
                           </p>
                         )}
 
-                        <p className="mb-2 text-sm text-muted-foreground">
+                        <p className="mb-1.5 text-xs text-muted-foreground">
                           {hotel.checkInDate} → {hotel.checkOutDate}
                         </p>
 
                         {hotel.roomDescription && (
-                          <p className="mb-2 text-sm text-muted-foreground">
+                          <p className="mb-1.5 line-clamp-2 text-xs text-muted-foreground">
                             Room: {hotel.roomDescription}
                           </p>
                         )}
 
                         {hotel.boardType && (
-                          <p className="mb-2 text-sm text-muted-foreground">
+                          <p className="mb-1.5 text-xs text-muted-foreground">
                             Board: {hotel.boardType}
                           </p>
                         )}
 
                         {hotel.cancellationPolicy && (
-                          <div className="mb-3 rounded-md border border-border bg-background p-3 text-sm text-muted-foreground">
+                          <div className="mb-2 rounded-md border border-border bg-background p-2 text-xs text-muted-foreground">
                             {hotel.cancellationPolicy}
                           </div>
                         )}
 
-                        <div className="mb-4 flex items-center gap-1 text-xs text-muted-foreground">
+                        <div className="mb-3 flex items-center gap-1 text-[11px] text-muted-foreground">
                           <DollarSign className="h-3 w-3" />
                           Displayed in USD
                           {normalizedCurrency !== "USD"
@@ -489,7 +517,7 @@ function HotelsPageContent() {
                         <Button
                           type="button"
                           variant={isSelected ? "default" : "outline"}
-                          className="w-full"
+                          className="h-9 w-full"
                           onClick={() => setSelectedHotelId(hotel.id)}
                         >
                           {isSelected ? (
@@ -519,27 +547,18 @@ function HotelsPageContent() {
                 </Button>
               </div>
             )}
-          </>
-        )}
 
-        <Card className="border-primary/20">
-          <CardContent className="flex flex-col gap-4 p-5 sm:flex-row sm:items-center sm:justify-between">
-            <div>
-              <h2 className="text-lg font-semibold text-foreground">Finalize your stay</h2>
-              <p className="text-sm text-muted-foreground">
-                Your selected hotel will be added automatically when you continue.
-              </p>
-            </div>
-            <div className="flex flex-col gap-2 sm:w-auto">
-              <Button asChild>
-                <Link href="/itinerary">View itinerary</Link>
+            <div className="mt-2 mb-8 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+              <Button asChild size="sm" className="btn-primary-light">
+                <Link href="/travel">Back to flights</Link>
               </Button>
-              <div className="grid grid-cols-2 gap-2 pt-1">
-                <Button asChild variant="outline">
-                  <Link href="/travel">Back to flights</Link>
+              <div className="flex flex-col gap-2 sm:flex-row sm:justify-end">
+                <Button asChild size="sm">
+                  <Link href="/itinerary">View itinerary</Link>
                 </Button>
                 <Button
                   type="button"
+                  size="sm"
                   onClick={handleContinueToCare}
                   disabled={!selectedHotel || isContinuingToCare}
                 >
@@ -554,8 +573,8 @@ function HotelsPageContent() {
                 </Button>
               </div>
             </div>
-          </CardContent>
-        </Card>
+          </>
+        )}
       </div>
       <Toaster />
     </AppShell>
