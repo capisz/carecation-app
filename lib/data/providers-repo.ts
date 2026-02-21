@@ -122,6 +122,7 @@ export type { Provider, RecoveryComfort } from "@/lib/mock/providers";
 export {
   PROCEDURE_CATEGORIES,
   COUNTRIES,
+  INTAKE_DESTINATIONS,
   LANGUAGES,
   BUDGET_RANGES,
   RECOVERY_COMFORT,

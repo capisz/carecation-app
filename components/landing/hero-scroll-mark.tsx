@@ -1,8 +1,8 @@
 "use client";
 
-import { useRef } from "react";
+import { useRef, useEffect, useState } from "react";
 import Image from "next/image";
-import { motion, useReducedMotion, useScroll, useTransform } from "framer-motion";
+import { motion, useScroll, useTransform } from "framer-motion";
 
 export function HeroScrollMark({
   lightSrc = "/brand/carecation-heart-light.png",
@@ -11,12 +11,23 @@ export function HeroScrollMark({
   lightSrc?: string;
   darkSrc?: string;
 }) {
-  const reduce = useReducedMotion();
   const targetRef = useRef<HTMLDivElement>(null);
+  const [prefersReducedMotion, setPrefersReducedMotion] = useState(false);
+  const [isMounted, setIsMounted] = useState(false);
 
-  // finishes when the hero section scrolls out (end hits top)
+  useEffect(() => {
+    setIsMounted(true);
+    const mediaQuery = window.matchMedia("(prefers-reduced-motion: reduce)");
+    setPrefersReducedMotion(mediaQuery.matches);
+    
+    const listener = (e: MediaQueryListEvent) => setPrefersReducedMotion(e.matches);
+    mediaQuery.addEventListener("change", listener);
+    return () => mediaQuery.removeEventListener("change", listener);
+  }, []);
+
+  // Only initialize scroll after mount to avoid SSR/hydration hook order issues
   const { scrollYProgress } = useScroll({
-    target: targetRef,
+    target: isMounted ? targetRef : undefined,
     offset: ["start start", "end start"],
   });
 
@@ -31,11 +42,12 @@ export function HeroScrollMark({
     <div
       ref={targetRef}
       className="pointer-events-none absolute inset-0 hidden lg:block"
+      style={{ position: 'absolute' }}
     >
       <motion.div
         className="absolute top-1/4 right-64 -translate-y-1/2"
         style={
-          reduce
+          prefersReducedMotion
             ? undefined
             : {
                 x,
@@ -55,6 +67,7 @@ export function HeroScrollMark({
           width={1000}
           height={1000}
           priority
+          loading="eager"
           className="block dark:hidden w-[320px] max-w-[34vw] h-auto select-none"
         />
 
@@ -66,6 +79,7 @@ export function HeroScrollMark({
           width={1000}
           height={1000}
           priority
+          loading="eager"
           className="hidden dark:block w-[320px] max-w-[34vw] h-auto select-none"
         />
       </motion.div>

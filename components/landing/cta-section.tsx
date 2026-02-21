@@ -17,11 +17,16 @@ export function CtaSection() {
           a carecation plan tailored to your needs. There is no commitment
           required to get started.
         </p>
-        <div className="mt-8 flex justify-center gap-4">
+        <div className="mt-8 flex flex-col sm:flex-row justify-center gap-4">
           <Button asChild size="lg" className="text-base">
             <SmartLink href="/intake">
               Begin your care plan
               <ArrowRight className="ml-2 h-4 w-4" aria-hidden="true" />
+            </SmartLink>
+          </Button>
+          <Button asChild size="lg" className="text-base">
+            <SmartLink href="/providers">
+              For Providers
             </SmartLink>
           </Button>
         </div>

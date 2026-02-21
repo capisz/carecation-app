@@ -17,6 +17,7 @@ import { Badge } from "@/components/ui/badge";
 import { ArrowLeft, CheckCircle2, MapPin, Send } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { Toaster } from "@/components/ui/toaster";
+import { upsertHealthcareEstimate } from "@/lib/itinerary-plan";
 
 function RequestContent() {
   usePageReady();
@@ -46,9 +47,21 @@ function RequestContent() {
       providerName: provider?.name,
     };
     console.log("Quote request payload:", payload);
+
+    if (provider) {
+      upsertHealthcareEstimate({
+        providerId: provider.id,
+        providerName: provider.name,
+        estimateMin: provider.priceRangeUSD.min,
+        estimateMax: provider.priceRangeUSD.max,
+        currency: "USD",
+        requestedAt: new Date().toISOString(),
+      });
+    }
+
     toast({
       title: "Quote requested!",
-      description: `Your request for ${provider?.name ?? "a provider"} has been submitted.`,
+      description: `Your request for ${provider?.name ?? "a provider"} has been submitted and added to your itinerary estimate.`,
     });
     setSubmitted(true);
   };

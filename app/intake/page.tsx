@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { usePageReady } from "@/hooks/use-page-ready";
 import { AppShell } from "@/components/app-shell";
@@ -8,68 +8,155 @@ import { Stepper } from "@/components/stepper";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
+import { Checkbox } from "@/components/ui/checkbox";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { ArrowLeft, ArrowRight } from "lucide-react";
 import {
   PROCEDURE_CATEGORIES,
-  COUNTRIES,
+  INTAKE_DESTINATIONS,
   TRAVEL_MONTHS,
   BUDGET_RANGES,
-  LANGUAGES,
-  RECOVERY_COMFORT,
 } from "@/lib/data/providers-repo";
+import { upsertTravelRecommendation } from "@/lib/itinerary-plan";
+import { findTravelLocation } from "@/lib/travel-locations";
 
-const STEPS = ["Procedure", "Destination", "Budget", "Preferences"];
+const STEPS = ["Procedure", "Destinations", "Budget", "Travel"];
+
+type IntakeForm = {
+  procedure: string;
+  preferredDestinations: string[];
+  month: string;
+  budgetLabel: string;
+};
+
+function buildTravelSummary(form: IntakeForm): {
+  destination: string;
+  cityCode: string;
+  airportCodes: string[];
+  summary: string;
+} {
+  const profile =
+    findTravelLocation(form.preferredDestinations[0]) ??
+    findTravelLocation("Thailand");
+  const destination = profile?.recommendedCity ?? "Bangkok";
+  const cityCode = profile?.recommendedCityCode ?? "BKK";
+  const airportCodes = (profile?.airports ?? []).map((airport) => airport.iata).slice(0, 3);
+  const budget = form.budgetLabel || "flexible budget";
+  const procedure = form.procedure || "care";
+  const month = form.month || "your preferred month";
+  const selectedDestinationsText =
+    form.preferredDestinations.length > 0
+      ? ` Preferred locations: ${form.preferredDestinations.join(", ")}.`
+      : "";
+
+  const airportText =
+    airportCodes.length > 0 ? ` Typical airports: ${airportCodes.join(", ")}.` : "";
+
+  return {
+    destination,
+    cityCode,
+    airportCodes,
+    summary: `Recommended start: ${destination} (${cityCode}). Based on ${procedure} in ${month} with ${budget}, begin by comparing flights first, then add a hotel and care estimate to your itinerary.${selectedDestinationsText}${airportText}`,
+  };
+}
 
 export default function IntakePage() {
   usePageReady();
   const router = useRouter();
   const [step, setStep] = useState(0);
-  const [form, setForm] = useState({
+  const contentRef = useRef<HTMLDivElement | null>(null);
+  const [form, setForm] = useState<IntakeForm>({
     procedure: "",
-    country: "",
+    preferredDestinations: [],
     month: "",
     budgetLabel: "",
-    language: "",
-    recoveryComfort: "",
   });
 
-  const update = (key: string, value: string) => {
+  const recommendation = useMemo(() => buildTravelSummary(form), [form]);
+
+  const update = (key: keyof IntakeForm, value: string) => {
     setForm((prev) => ({ ...prev, [key]: value }));
   };
 
   const canNext = () => {
     switch (step) {
-      case 0: return !!form.procedure;
-      case 1: return !!form.country && !!form.month;
-      case 2: return !!form.budgetLabel;
-      case 3: return !!form.language && !!form.recoveryComfort;
-      default: return false;
+      case 0:
+        return Boolean(form.procedure);
+      case 1:
+        return form.preferredDestinations.length > 0 && Boolean(form.month);
+      case 2:
+        return Boolean(form.budgetLabel);
+      case 3:
+        return true;
+      default:
+        return false;
     }
   };
 
-  const handleSubmit = () => {
-    const budget = BUDGET_RANGES.find((b) => b.label === form.budgetLabel);
-    const params = new URLSearchParams({
-      procedure: form.procedure,
-      country: form.country,
-      month: form.month,
-      budgetMin: String(budget?.min ?? 0),
-      budgetMax: String(budget?.max ?? 100000),
-      language: form.language,
-      recoveryComfort: form.recoveryComfort,
+  const toggleDestination = (destination: string) => {
+    setForm((prev) => {
+      const exists = prev.preferredDestinations.includes(destination);
+      return {
+        ...prev,
+        preferredDestinations: exists
+          ? prev.preferredDestinations.filter((value) => value !== destination)
+          : [...prev.preferredDestinations, destination],
+      };
     });
-    router.push(`/results?${params.toString()}`);
+  };
+
+  const openBrowseTravelWithRecommendation = () => {
+    const rec = buildTravelSummary(form);
+    upsertTravelRecommendation({
+      procedure: form.procedure,
+      country: form.preferredDestinations[0] ?? "Any",
+      month: form.month,
+      budgetLabel: form.budgetLabel,
+      recommendedDestination: rec.destination,
+      recommendedCityCode: rec.cityCode,
+      recommendedAirportCodes: rec.airportCodes,
+      preferredDestinations: form.preferredDestinations,
+      summary: rec.summary,
+      createdAt: new Date().toISOString(),
+    });
+
+    const params = new URLSearchParams({
+      destination: rec.destination,
+      destinationCityCode: rec.cityCode,
+      destinationAirports: rec.airportCodes.join(","),
+      country: form.preferredDestinations[0] || "Any",
+      preferredDestinations: form.preferredDestinations.join(","),
+      month: form.month,
+      procedure: form.procedure,
+      budgetLabel: form.budgetLabel,
+    });
+    router.push(`/travel?${params.toString()}`);
+  };
+
+  const goToStep = (nextStep: number) => {
+    setStep(nextStep);
+    window.requestAnimationFrame(() => {
+      contentRef.current?.scrollIntoView({
+        behavior: "smooth",
+        block: "center",
+      });
+    });
   };
 
   return (
     <AppShell>
-      <div className="mx-auto max-w-2xl px-4 py-12 lg:py-20">
-        <div className="text-center mb-10">
+      <div ref={contentRef} className="mx-auto max-w-2xl px-4 py-12 lg:py-20">
+        <div className="mb-10 text-center">
           <h1 className="text-3xl font-bold text-foreground">Plan your carecation</h1>
           <p className="mt-2 text-muted-foreground">
-            Answer a few questions and we will match you with the best providers.
+            Follow the flow: care preferences, destination, budget, then travel.
           </p>
         </div>
 
@@ -81,19 +168,24 @@ export default function IntakePage() {
           <CardContent className="p-6 sm:p-8">
             {step === 0 && (
               <div className="space-y-4">
-                <Label className="text-base font-semibold">What procedure are you looking for?</Label>
-                <RadioGroup value={form.procedure} onValueChange={(v) => update("procedure", v)}>
+                <Label className="text-base font-semibold">
+                  What procedure are you looking for?
+                </Label>
+                <RadioGroup
+                  value={form.procedure}
+                  onValueChange={(value) => update("procedure", value)}
+                >
                   {PROCEDURE_CATEGORIES.map((cat) => (
-                    <div key={cat} className="flex items-center gap-3 rounded-lg border p-4 cursor-pointer hover:bg-muted/50 transition-colors">
-                      <RadioGroupItem value={cat} id={cat} />
-                      <Label htmlFor={cat} className="cursor-pointer flex-1">
-                        <span className="font-medium">{cat}</span>
-                        <span className="block text-sm text-muted-foreground mt-0.5">
-                          {cat === "Dental"
-                            ? "Implants, veneers, crowns, whitening, and more"
-                            : "Rhinoplasty, facelift, liposuction, hair transplant, and more"}
-                        </span>
-                      </Label>
+                    <div
+                      key={cat}
+                      className="cursor-pointer rounded-lg border p-4 transition-colors hover:bg-muted/50"
+                    >
+                      <div className="flex items-center gap-3">
+                        <RadioGroupItem value={cat} id={cat} />
+                        <Label htmlFor={cat} className="cursor-pointer flex-1">
+                          <span className="font-medium">{cat}</span>
+                        </Label>
+                      </div>
                     </div>
                   ))}
                 </RadioGroup>
@@ -103,24 +195,44 @@ export default function IntakePage() {
             {step === 1 && (
               <div className="space-y-6">
                 <div className="space-y-3">
-                  <Label className="text-base font-semibold">Preferred destination</Label>
-                  <Select value={form.country} onValueChange={(v) => update("country", v)}>
-                    <SelectTrigger><SelectValue placeholder="Select country" /></SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="Any">No preference</SelectItem>
-                      {COUNTRIES.map((c) => (
-                        <SelectItem key={c} value={c}>{c}</SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
+                  <Label className="text-base font-semibold">
+                    Preferred destinations (select multiple)
+                  </Label>
+                  <div className="grid gap-2 sm:grid-cols-2">
+                    {INTAKE_DESTINATIONS.map((destination) => {
+                      const checked = form.preferredDestinations.includes(destination);
+                      return (
+                        <label
+                          key={destination}
+                          className="flex cursor-pointer items-center gap-3 rounded-lg border p-3 hover:bg-muted/50"
+                        >
+                          <Checkbox
+                            checked={checked}
+                            onCheckedChange={() => toggleDestination(destination)}
+                          />
+                          <span className="text-sm text-foreground">{destination}</span>
+                        </label>
+                      );
+                    })}
+                  </div>
+                  <p className="text-xs text-muted-foreground">
+                    Selected:{" "}
+                    {form.preferredDestinations.length > 0
+                      ? form.preferredDestinations.join(", ")
+                      : "none"}
+                  </p>
                 </div>
                 <div className="space-y-3">
                   <Label className="text-base font-semibold">When do you want to travel?</Label>
-                  <Select value={form.month} onValueChange={(v) => update("month", v)}>
-                    <SelectTrigger><SelectValue placeholder="Select month" /></SelectTrigger>
+                  <Select value={form.month} onValueChange={(value) => update("month", value)}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select month" />
+                    </SelectTrigger>
                     <SelectContent>
-                      {TRAVEL_MONTHS.map((m) => (
-                        <SelectItem key={m} value={m}>{m}</SelectItem>
+                      {TRAVEL_MONTHS.map((month) => (
+                        <SelectItem key={month} value={month}>
+                          {month}
+                        </SelectItem>
                       ))}
                     </SelectContent>
                   </Select>
@@ -131,13 +243,21 @@ export default function IntakePage() {
             {step === 2 && (
               <div className="space-y-4">
                 <Label className="text-base font-semibold">What is your budget range?</Label>
-                <RadioGroup value={form.budgetLabel} onValueChange={(v) => update("budgetLabel", v)}>
-                  {BUDGET_RANGES.map((b) => (
-                    <div key={b.label} className="flex items-center gap-3 rounded-lg border p-4 cursor-pointer hover:bg-muted/50 transition-colors">
-                      <RadioGroupItem value={b.label} id={b.label} />
-                      <Label htmlFor={b.label} className="cursor-pointer flex-1 font-medium">
-                        {b.label}
-                      </Label>
+                <RadioGroup
+                  value={form.budgetLabel}
+                  onValueChange={(value) => update("budgetLabel", value)}
+                >
+                  {BUDGET_RANGES.map((budget) => (
+                    <div
+                      key={budget.label}
+                      className="cursor-pointer rounded-lg border p-4 transition-colors hover:bg-muted/50"
+                    >
+                      <div className="flex items-center gap-3">
+                        <RadioGroupItem value={budget.label} id={budget.label} />
+                        <Label htmlFor={budget.label} className="cursor-pointer flex-1 font-medium">
+                          {budget.label}
+                        </Label>
+                      </div>
                     </div>
                   ))}
                 </RadioGroup>
@@ -145,62 +265,49 @@ export default function IntakePage() {
             )}
 
             {step === 3 && (
-              <div className="space-y-6">
-                <div className="space-y-3">
-                  <Label className="text-base font-semibold">Preferred language</Label>
-                  <Select value={form.language} onValueChange={(v) => update("language", v)}>
-                    <SelectTrigger><SelectValue placeholder="Select language" /></SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="Any">No preference</SelectItem>
-                      {LANGUAGES.map((l) => (
-                        <SelectItem key={l} value={l}>{l}</SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-                <div className="space-y-3">
-                  <Label className="text-base font-semibold">Recovery comfort level</Label>
-                  <p className="text-sm text-muted-foreground">
-                    This affects how many recovery days we factor into your itinerary.
+              <div className="space-y-5">
+                <div className="rounded-lg border border-primary/25 bg-primary/10 p-4">
+                  <h2 className="text-base font-semibold text-foreground">Travel recommendation</h2>
+                  <p className="mt-2 text-sm text-muted-foreground">
+                    {recommendation.summary}
                   </p>
-                  <RadioGroup value={form.recoveryComfort} onValueChange={(v) => update("recoveryComfort", v)}>
-                    {RECOVERY_COMFORT.map((level) => (
-                      <div key={level} className="flex items-center gap-3 rounded-lg border p-4 cursor-pointer hover:bg-muted/50 transition-colors">
-                        <RadioGroupItem value={level} id={level} />
-                        <Label htmlFor={level} className="cursor-pointer flex-1">
-                          <span className="font-medium capitalize">{level}</span>
-                          <span className="block text-sm text-muted-foreground mt-0.5">
-                            {level === "low"
-                              ? "Minimal recovery time needed (1-3 days)"
-                              : level === "medium"
-                                ? "Moderate recovery with some rest days (4-7 days)"
-                                : "Extended recovery with full comfort (7+ days)"}
-                          </span>
-                        </Label>
-                      </div>
-                    ))}
-                  </RadioGroup>
+                  <div className="mt-3 flex flex-wrap gap-2 text-xs text-muted-foreground">
+                    <span className="rounded-md bg-background px-2 py-1">
+                      City code: {recommendation.cityCode}
+                    </span>
+                    {recommendation.airportCodes.length > 0 && (
+                      <span className="rounded-md bg-background px-2 py-1">
+                        Airports: {recommendation.airportCodes.join(", ")}
+                      </span>
+                    )}
+                  </div>
                 </div>
+                <p className="text-sm text-muted-foreground">
+                  Click Next to continue to Browse Travel.
+                </p>
               </div>
             )}
 
-            <div className="flex items-center justify-between mt-8 pt-6 border-t">
+            <div className="mt-8 flex items-center justify-between border-t pt-6">
               <Button
                 variant="outline"
-                onClick={() => setStep((s) => s - 1)}
+                onClick={() => goToStep(Math.max(0, step - 1))}
                 disabled={step === 0}
               >
                 <ArrowLeft className="mr-2 h-4 w-4" />
                 Back
               </Button>
               {step < STEPS.length - 1 ? (
-                <Button onClick={() => setStep((s) => s + 1)} disabled={!canNext()}>
+                <Button
+                  onClick={() => goToStep(Math.min(STEPS.length - 1, step + 1))}
+                  disabled={!canNext()}
+                >
                   Next
                   <ArrowRight className="ml-2 h-4 w-4" />
                 </Button>
               ) : (
-                <Button onClick={handleSubmit} disabled={!canNext()}>
-                  Find providers
+                <Button onClick={openBrowseTravelWithRecommendation} disabled={!canNext()}>
+                  Next
                   <ArrowRight className="ml-2 h-4 w-4" />
                 </Button>
               )}

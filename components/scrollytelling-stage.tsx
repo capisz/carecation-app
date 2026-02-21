@@ -1,11 +1,10 @@
 "use client";
 
-import React, { useRef } from "react";
+import React, { useRef, useEffect, useState } from "react";
 import {
   motion,
   useScroll,
   useTransform,
-  useReducedMotion,
 } from "framer-motion";
 
 /**
@@ -23,12 +22,24 @@ interface ScrollytellingStageProps {
 }
 
 export function ScrollytellingStage({ sections }: ScrollytellingStageProps) {
-  const reducedMotion = useReducedMotion();
   const containerRef = useRef<HTMLDivElement>(null);
+  const [reducedMotion, setReducedMotion] = useState(false);
+  const [isMounted, setIsMounted] = useState(false);
   const n = sections.length;
 
+  useEffect(() => {
+    setIsMounted(true);
+    const mediaQuery = window.matchMedia("(prefers-reduced-motion: reduce)");
+    setReducedMotion(mediaQuery.matches);
+    
+    const listener = (e: MediaQueryListEvent) => setReducedMotion(e.matches);
+    mediaQuery.addEventListener("change", listener);
+    return () => mediaQuery.removeEventListener("change", listener);
+  }, []);
+
+  // Only initialize scroll after mount to avoid SSR/hydration hook order issues
   const { scrollYProgress } = useScroll({
-    target: containerRef,
+    target: isMounted ? containerRef : undefined,
     offset: ["start start", "start end"],
   });
 
@@ -96,7 +107,7 @@ export function ScrollytellingStage({ sections }: ScrollytellingStageProps) {
   }
 
   return (
-    <div ref={containerRef} className="relative">
+    <div ref={containerRef} className="relative" style={{ position: 'relative' }}>
       {/* Normal document flow: all sections stacked vertically */}
       {sections.map((section, i) => (
         <div key={i}>{section}</div>

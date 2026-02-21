@@ -35,7 +35,7 @@ const destinations: Destination[] = [
     specialties: ["Dental", "Bariatric", "Orthopedic"],
     note: "Proximity to the US",
     description:
-      "Convenient travel from the United States with bilingual teams and growing international accreditation standards. Many providers are used to shorter trips, offering clear pre-visit instructions, defined care plans, and coordination for follow-ups—helpful if you’re comparing options quickly and carefully.",
+      "Convenient travel from the United States with bilingual teams and growing international accreditation standards. Many providers are used to shorter trips, offering clear pre-visit instructions, defined care plans, and coordination for follow-ups—helpful if you're comparing options quickly and carefully.",
   },
   {
     country: "Turkey",
@@ -116,7 +116,7 @@ const destinations: Destination[] = [
     specialties: ["Specialist Care"],
     note: "Nordic systems",
     description:
-      "Strong clinical standards and modern facilities in key regions, with an emphasis on safety and specialist care. It’s best to arrive organized—records, questions, and timelines—since coordination can be more structured, and planning ahead makes follow-up smoother. Beautiful scenery",
+      "Strong clinical standards and modern facilities in key regions, with an emphasis on safety and specialist care. It's best to arrive organized—records, questions, and timelines—since coordination can be more structured, and planning ahead makes follow-up smoother. Beautiful scenery",
   },
   {
     country: "Singapore",
@@ -174,6 +174,15 @@ export function DestinationsSection() {
 
   const [hovered, setHovered] = useState<number | null>(null);
   const [tilt, setTilt] = useState<{ rx: number; ry: number }>({ rx: 0, ry: 0 });
+  const [prefersReducedMotion, setPrefersReducedMotion] = useState(false);
+
+  useEffect(() => {
+    const mediaQuery = window.matchMedia("(prefers-reduced-motion: reduce)");
+    setPrefersReducedMotion(mediaQuery.matches);
+    const handleChange = (e: MediaQueryListEvent) => setPrefersReducedMotion(e.matches);
+    mediaQuery.addEventListener("change", handleChange);
+    return () => mediaQuery.removeEventListener("change", handleChange);
+  }, []);
 
   const clampLoop = useCallback(() => {
     const loopW = loopWRef.current;
@@ -299,10 +308,10 @@ export function DestinationsSection() {
   }, []);
 
   return (
-   <section
-  className="pt-8 pb-12 lg:pt-12 lg:pb-14 bg-[hsl(77_23%_86%)] dark:bg-[hsl(80_19%_25%)]"
-  aria-labelledby="destinations-heading"
->
+    <section
+      className="pt-8 pb-12 lg:pt-12 lg:pb-14 bg-secondary"
+      aria-labelledby="destinations-heading"
+    >
       <div className="mx-auto max-w-7xl px-4 lg:px-8">
         <div className="text-center mb-8">
           <h2 id="destinations-heading" className="text-3xl font-bold text-foreground sm:text-4xl text-balance">
@@ -315,12 +324,12 @@ export function DestinationsSection() {
 
         <div className="relative">
           {/* Arrows */}
-          <div className="pointer-events-none absolute inset-y-0 left-0 flex items-center z-20">
+          <div className="pointer-events-none absolute inset-y-0 left-0 flex items-center z-20 -translate-x-[95%] lg:-translate-x-[125%]">
             <Button
               type="button"
               variant="secondary"
               size="icon"
-              className="pointer-events-auto rounded-full shadow-sm"
+              className="pointer-events-auto rounded-full border border-border/80 !bg-transparent !text-foreground shadow-sm transition-all duration-200 hover:scale-110 hover:!border-primary hover:!bg-primary hover:!text-primary-foreground hover:shadow-[0_0_0_2px_hsl(var(--background)),0_0_34px_hsl(var(--primary)/0.85)] focus-visible:!border-primary focus-visible:!bg-primary focus-visible:!text-primary-foreground focus-visible:shadow-[0_0_0_2px_hsl(var(--background)),0_0_34px_hsl(var(--primary)/0.85)] active:!border-primary active:!bg-primary active:!text-primary-foreground active:shadow-[0_0_0_2px_hsl(var(--background)),0_0_28px_hsl(var(--primary)/0.75)]"
               onClick={() => nudgeByOne(-1)}
               aria-label="Previous destination"
             >
@@ -328,12 +337,12 @@ export function DestinationsSection() {
             </Button>
           </div>
 
-          <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center z-20">
+          <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center z-20 translate-x-[95%] lg:translate-x-[125%]">
             <Button
               type="button"
               variant="secondary"
               size="icon"
-              className="pointer-events-auto rounded-full shadow-sm"
+              className="pointer-events-auto rounded-full border border-border/80 !bg-transparent !text-foreground shadow-sm transition-all duration-200 hover:scale-110 hover:!border-primary hover:!bg-primary hover:!text-primary-foreground hover:shadow-[0_0_0_2px_hsl(var(--background)),0_0_34px_hsl(var(--primary)/0.85)] focus-visible:!border-primary focus-visible:!bg-primary focus-visible:!text-primary-foreground focus-visible:shadow-[0_0_0_2px_hsl(var(--background)),0_0_34px_hsl(var(--primary)/0.85)] active:!border-primary active:!bg-primary active:!text-primary-foreground active:shadow-[0_0_0_2px_hsl(var(--background)),0_0_28px_hsl(var(--primary)/0.75)]"
               onClick={() => nudgeByOne(1)}
               aria-label="Next destination"
             >
@@ -343,32 +352,25 @@ export function DestinationsSection() {
 
           {/* viewport */}
           <div
-  ref={viewportRef}
-  className="relative overflow-x-hidden overflow-y-visible py-6"
-  style={{
-    WebkitMaskImage:
-      "linear-gradient(to right, rgba(0,0,0,0) 0%, rgba(0,0,0,1) 1.6%, rgba(0,0,0,1) 98.4%, rgba(0,0,0,0) 100%)",
-    maskImage:
-      "linear-gradient(to right, rgba(0,0,0,0) 0%, rgba(0,0,0,1) 1.6%, rgba(0,0,0,1) 98.4%, rgba(0,0,0,0) 100%)",
-    WebkitMaskRepeat: "no-repeat",
-    maskRepeat: "no-repeat",
-    WebkitMaskSize: "100% 100%",
-    maskSize: "100% 100%",
-  }}
->
-            <div
-              ref={trackRef}
-              className="flex gap-6 will-change-transform"
-              style={{ transform: "translate3d(0,0,0)" }}
-              role="list"
-            >
+            ref={viewportRef}
+            className="relative overflow-x-hidden overflow-y-visible py-10"
+          >
+            {/* Left fade overlay */}
+            <div className="pointer-events-none absolute inset-y-0 left-0 w-8 bg-gradient-to-r from-secondary to-transparent z-10" />
+
+            {/* Right fade overlay */}
+            <div className="pointer-events-none absolute inset-y-0 right-0 w-8 bg-gradient-to-l from-secondary to-transparent z-10" />
+
+            <div ref={trackRef} className="flex gap-6 will-change-transform" style={{ transform: "translate3d(0,0,0)" }} role="list">
               {doubled.map((dest, i) => {
                 const isHovered = hovered === i;
 
                 return (
                   <div
-                    key={`${dest.country}-${i}`}
-                    className="relative shrink-0 w-[300px] sm:w-[340px] lg:w-[380px]"
+                    key={i}
+                    role="listitem"
+                    className="inline-block flex-shrink-0 align-top w-[300px] md:w-[340px] lg:w-[380px] px-2"
+                    style={{ perspective: 600 }}
                     onMouseEnter={() => {
                       setHovered(i);
                       pausedRef.current = true;
@@ -379,144 +381,81 @@ export function DestinationsSection() {
                       setTilt({ rx: 0, ry: 0 });
                     }}
                     onMouseMove={isHovered ? handleTiltMove : undefined}
-                    style={{ perspective: 900 }}
                   >
                     <Card
                       className={[
-                        "group relative overflow-hidden rounded-xl backdrop-blur-sm",
-                       "bg-[hsl(77_30%_97%)]",      // lighter than the light section bg
-                        "dark:bg-[hsl(80_18%_33%)]", // lighter than the dark section bg
+                        "relative overflow-hidden rounded-xl",
+                        "bg-card dark:bg-card",
                         "border-0 outline-none ring-0",
-                        "transition-[transform,box-shadow] duration-200 ease-out",
-                        // tight depth shadow (no border/box look)
-                        // softer, lifted, no edge line
-                        "shadow-[0_18px_44px_-34px_rgba(0,0,0,0.28)] dark:shadow-[0_22px_54px_-38px_rgba(0,0,0,0.62)]",
-
-                          isHovered
-                          ? "shadow-[0_28px_78px_-54px_rgba(0,0,0,0.38)] dark:shadow-[0_34px_92px_-62px_rgba(0,0,0,0.78)]"
-                          : "",
-
-                      ].join(" ")}
-                      role="listitem"
-                      style={
+                        "transition-all duration-300 ease-out",
                         isHovered
+                          ? "shadow-[0_12px_26px_rgba(0,0,0,0.14),0_18px_34px_rgba(0,0,0,0.10),0_0_30px_hsl(var(--primary)/0.22)]"
+                          : "shadow-[0_6px_16px_rgba(0,0,0,0.08)] dark:shadow-[0_8px_20px_rgba(0,0,0,0.24)]",
+                      ].join(" ")}
+                      style={
+                        isHovered && !prefersReducedMotion
                           ? {
-                              transform: `translateY(-0.25rem) scale(1.035) rotateX(${tilt.rx}deg) rotateY(${tilt.ry}deg)`,
-                              transformStyle: "preserve-3d",
+                              transform: `translateY(-0.25rem) scale(1.03) rotateX(${tilt.rx}deg) rotateY(${tilt.ry}deg)`,
                               willChange: "transform",
                             }
-                          : undefined
+                          : {
+                              transform: "translateY(0) scale(1) rotateX(0deg) rotateY(0deg)",
+                            }
                       }
                     >
-                      {/* subtle green bloom (helps the hover feel “alive”) */}
+                      {/* Bloom / glow overlay */}
                       <div
-                        aria-hidden="true"
-                         className={[
-                        "pointer-events-none absolute -inset-8 rounded-[28px] blur-2xl",
-                        "transition-opacity duration-300 ease-out",
-                         "bg-[radial-gradient(60%_60%_at_50%_18%,hsl(var(--primary)/0.38),transparent_70%)]",
-                         isHovered ? "opacity-100" : "opacity-0",
-                        ].join(" ")}
+                        className="pointer-events-none absolute inset-0 rounded-xl transition-opacity duration-300"
+                        style={{
+                          background: "radial-gradient(ellipse at 50% 40%, hsl(var(--primary) / 0.16) 0%, transparent 70%)",
+                          opacity: isHovered ? 1 : 0,
+                        }}
                       />
 
-                      {/* Image header */}
-                      <div className="relative h-32 bg-primary/5">
-                        <div className="absolute inset-0 flex items-center justify-center">
-                          <MapPin className="h-10 w-10 text-primary/40" aria-hidden="true" />
-                        </div>
-
-                        <Image
-                          src={dest.image}
-                          alt={`${dest.country} destination`}
-                          fill
-                          className={[
-                            "object-cover transition-[transform,filter] duration-450 ease-out",
-                            isHovered
-                              ? "scale-[1.05] -translate-y-0.5 saturate-[1.04] contrast-[1.02]"
-                              : "scale-100 translate-y-0",
-                          ].join(" ")}
-                          sizes="(min-width: 1024px) 380px, (min-width: 640px) 340px, 300px"
-                          priority={dest.country === "Thailand"}
-                        />
-
-                        <div
-                          className={[
-                            "absolute inset-0 bg-gradient-to-t to-transparent transition-opacity duration-450",
-                            isHovered ? "from-black/22" : "from-black/32",
-                          ].join(" ")}
-                        />
-
-                        {/* Sheen */}
-                        <div
-                          aria-hidden="true"
-                          className={[
-                            "pointer-events-none absolute inset-0 opacity-0 transition-opacity duration-200",
-                            isHovered ? "opacity-100" : "",
-                          ].join(" ")}
-                        >
-                          <div
-                            className={[
-                              "absolute -inset-y-12 -left-[70%] w-[60%] rotate-12",
-                              "bg-gradient-to-r from-transparent via-white/14 to-transparent dark:via-white/8",
-                              "blur-lg",
-                              isHovered
-                                ? "translate-x-[360%] transition-transform duration-[2400ms] ease-out"
-                                : "translate-x-[0%] transition-transform duration-0",
-                            ].join(" ")}
+                      <CardContent className="p-0 flex flex-col relative z-10">
+                        <div className="relative h-40 overflow-hidden rounded-t-xl">
+                          <Image
+                            src={dest.image}
+                            alt={`${dest.country} destination`}
+                            fill
+                            className="object-cover"
                           />
                         </div>
-                      </div>
 
-                      <CardContent className="p-5">
-                        <div className="flex items-center justify-between mb-3 gap-2">
-                          <h3 className="text-xl font-bold text-foreground">
-                            <span className="relative inline-block">
+                        <div className="p-5 flex flex-col gap-3">
+
+                        <div className="flex-1 flex flex-col gap-3">
+                          <div>
+                            <h3 className="text-xl font-bold text-foreground">
                               {dest.country}
                               <span
-                                aria-hidden="true"
-                                className={[
-                                  "absolute -bottom-1 left-0 h-[2px] bg-primary/60 transition-all duration-200",
-                                  isHovered ? "w-full" : "w-0",
-                                ].join(" ")}
+                                className="block h-[2px] bg-primary mt-1 transition-all duration-300 ease-out"
+                                style={{ width: isHovered ? "100%" : "0%" }}
                               />
-                            </span>
-                          </h3>
+                            </h3>
+                            <div className="flex items-center gap-1 text-sm text-muted-foreground mt-1">
+                              <MapPin className="h-4 w-4" aria-hidden="true" />
+                              <span>{dest.cities.join(", ")}</span>
+                            </div>
+                          </div>
 
-                          <span
-                            className={
-                              isHovered
-                                ? "translate-y-[-1px] transition-transform duration-200"
-                                : "transition-transform duration-200"
-                            }
-                          >
-                            <Badge className="bg-primary/10 text-primary hover:bg-primary/20 border-0">
-                              {dest.note}
-                            </Badge>
-                          </span>
+                          <div className="flex flex-wrap gap-1.5">
+                            {dest.specialties.map((spec) => (
+                              <Badge key={spec} variant="secondary" className="text-xs">
+                                {spec}
+                              </Badge>
+                            ))}
+                          </div>
+
+                          {dest.note && (
+                            <p className="text-sm text-muted-foreground italic">{dest.note}</p>
+                          )}
+
+                          <p className="text-sm text-muted-foreground leading-relaxed line-clamp-4">
+                            {dest.description}
+                          </p>
                         </div>
-
-                        <p className="text-sm text-muted-foreground leading-relaxed mb-4 min-h-[88px]">
-                          {dest.description}
-                        </p>
-
-                        <div className="flex flex-wrap gap-1.5">
-                          {dest.specialties.slice(0, 3).map((s) => (
-                            <Badge
-                              key={s}
-                              variant="secondary"
-                              className={[
-                                "text-xs transition-[transform,opacity] duration-200",
-                                isHovered ? "-translate-y-0.5 opacity-100" : "translate-y-0 opacity-95",
-                              ].join(" ")}
-                            >
-                              {s}
-                            </Badge>
-                          ))}
                         </div>
-
-                        <p className="text-xs text-muted-foreground mt-3">
-                          Cities: {dest.cities.join(", ")}
-                        </p>
                       </CardContent>
                     </Card>
                   </div>

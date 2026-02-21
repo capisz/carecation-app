@@ -4,6 +4,9 @@ import { Poppins, Libre_Baskerville, IBM_Plex_Mono } from "next/font/google";
 import { ThemeProvider } from "@/components/theme-provider";
 import { OverlayProvider } from "@/components/overlay/overlay-provider";
 import { NavOverlay } from "@/components/overlay/nav-overlay";
+import { LoadingProvider } from "@/components/loading-provider";
+import { LoadingOverlay } from "@/components/ecg-plane-animation";
+import { SuppressWarnings } from "./suppress-warnings";
 import "./globals.css";
 
 const poppins = Poppins({
@@ -25,9 +28,23 @@ const ibmPlexMono = IBM_Plex_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Carecation - Healthcare Tourism Planner",
+  title: "Carecation - Healthcare meets Adventure",
   description:
     "Plan your medical travel with confidence. Compare accredited providers, build itineraries, and get personalized carecation plans.",
+  icons: {
+    icon: [
+      {
+        media: "(prefers-color-scheme: light)",
+        url: "/brand/carecation-heart-light.png",
+      },
+      {
+        media: "(prefers-color-scheme: dark)",
+        url: "/brand/carecation-heart-dark.png",
+      },
+    ],
+    shortcut: "/brand/carecation-heart-light.png",
+    apple: "/brand/carecation-heart-light.png",
+  },
 };
 
 export default function RootLayout({
@@ -46,10 +63,14 @@ export default function RootLayout({
           enableSystem
           disableTransitionOnChange
         >
-          <OverlayProvider>
-            <NavOverlay />
-            {children}
-          </OverlayProvider>
+          <LoadingProvider>
+            <LoadingOverlay />
+            <SuppressWarnings />
+            <OverlayProvider>
+              <NavOverlay />
+              {children}
+            </OverlayProvider>
+          </LoadingProvider>
         </ThemeProvider>
       </body>
     </html>
