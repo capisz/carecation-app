@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
-import { useEffect, useMemo, useState } from "react";
+import { Suspense, useEffect, useMemo, useState } from "react";
 import { AppShell } from "@/components/app-shell";
 import { useLoading } from "@/components/loading-provider";
 import { Badge } from "@/components/ui/badge";
@@ -140,7 +140,7 @@ function toPlannedHotel(
   };
 }
 
-export default function HotelsPage() {
+function HotelsPageContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const { withLoading } = useLoading();
@@ -559,5 +559,21 @@ export default function HotelsPage() {
       </div>
       <Toaster />
     </AppShell>
+  );
+}
+
+export default function HotelsPage() {
+  return (
+    <Suspense
+      fallback={
+        <AppShell>
+          <div className="mx-auto max-w-7xl px-4 py-8 text-muted-foreground lg:px-8 lg:py-12">
+            Loading hotel options...
+          </div>
+        </AppShell>
+      }
+    >
+      <HotelsPageContent />
+    </Suspense>
   );
 }

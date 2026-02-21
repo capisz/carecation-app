@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
-import { useEffect, useMemo, useState, type FormEvent } from "react";
+import { Suspense, useEffect, useMemo, useState, type FormEvent } from "react";
 import { AppShell } from "@/components/app-shell";
 import { useLoading } from "@/components/loading-provider";
 import { Badge } from "@/components/ui/badge";
@@ -288,7 +288,7 @@ function toPlannedFlight(
   };
 }
 
-export default function TravelPage() {
+function TravelPageContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const { toast } = useToast();
@@ -1113,5 +1113,21 @@ export default function TravelPage() {
       </div>
       <Toaster />
     </AppShell>
+  );
+}
+
+export default function TravelPage() {
+  return (
+    <Suspense
+      fallback={
+        <AppShell>
+          <div className="mx-auto max-w-7xl px-4 py-8 text-muted-foreground lg:px-8 lg:py-12">
+            Loading travel search...
+          </div>
+        </AppShell>
+      }
+    >
+      <TravelPageContent />
+    </Suspense>
   );
 }
