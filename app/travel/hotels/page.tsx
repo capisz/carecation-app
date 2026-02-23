@@ -70,14 +70,22 @@ function formatPrice(value: number, currency: string): string {
 function getHotelImageCandidates(hotelName: string): string[] {
   const trimmed = hotelName.trim();
   const normalizedName = trimmed
+    .normalize("NFKD")
+    .replace(/[\u0300-\u036f]/g, "")
     .replace(/[^a-zA-Z0-9\s-]/g, "")
-    .replace(/\s+/g, "-");
+    .trim()
+    .replace(/\s+/g, "-")
+    .replace(/-+/g, "-");
+  const lowerSlug = normalizedName.toLowerCase();
 
-  return [
-    `/hotels/${encodeURIComponent(trimmed)}.jpg`,
-    `/hotels/${normalizedName}.jpg`,
-    "/placeholder.svg",
-  ];
+  return Array.from(
+    new Set([
+      `/hotels/${lowerSlug}.jpg`,
+      `/hotels/${normalizedName}.jpg`,
+      `/hotels/${encodeURIComponent(trimmed)}.jpg`,
+      "/placeholder.svg",
+    ]),
+  );
 }
 
 async function postJson<T>(url: string, payload: unknown): Promise<T> {
