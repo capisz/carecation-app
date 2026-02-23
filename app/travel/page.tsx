@@ -1003,13 +1003,13 @@ function TravelPageContent() {
                             )}
                           </div>
                           <div className="flex items-center gap-2">
-                            <div className="flex h-8 w-16 items-center justify-center overflow-hidden rounded-md border border-border bg-background px-1">
+                            <div className="flex h-8 w-16 items-center justify-center overflow-hidden rounded-md border border-border/80 bg-white/90 px-1 shadow-sm dark:border-border/70 dark:bg-secondary dark:shadow-[0_1px_4px_rgba(0,0,0,0.35)]">
                               {logoSrc ? (
                                 // eslint-disable-next-line @next/next/no-img-element
                                 <img
                                   src={logoSrc}
                                   alt={`${primaryCarrierSegment?.carrierName ?? "Airline"} logo`}
-                                  className="max-h-5 w-auto object-contain"
+                                  className="max-h-5 w-auto object-contain drop-shadow-[0_1px_1px_rgba(0,0,0,0.2)] dark:drop-shadow-[0_1px_1px_rgba(255,255,255,0.35)]"
                                   onError={() => {
                                     setLogoAttemptByFlightId((prev) => {
                                       const currentAttempt = prev[flight.id] ?? 0;
@@ -1021,7 +1021,7 @@ function TravelPageContent() {
                                   }}
                                 />
                               ) : (
-                                <span className="text-[10px] font-medium uppercase text-muted-foreground">
+                                <span className="text-[10px] font-medium uppercase text-foreground/80 dark:text-foreground">
                                   {primaryCarrierSegment?.carrierCode ?? "N/A"}
                                 </span>
                               )}
