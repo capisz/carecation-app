@@ -12,6 +12,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Toaster } from "@/components/ui/toaster";
 import { useToast } from "@/hooks/use-toast";
+import { getAirlineLogoCandidates } from "@/lib/airline-logos";
 import { upsertTravelSelections, type PlannedFlight } from "@/lib/itinerary-plan";
 import { findTravelLocation, type TravelLocationProfile } from "@/lib/travel-locations";
 import { cn } from "@/lib/utils";
@@ -341,6 +342,9 @@ function TravelPageContent() {
   const [visibleFlightsCount, setVisibleFlightsCount] = useState(6);
   const [selectedFlightId, setSelectedFlightId] = useState<string | null>(null);
   const [isContinuingToHotels, setIsContinuingToHotels] = useState(false);
+  const [logoAttemptByFlightId, setLogoAttemptByFlightId] = useState<Record<string, number>>(
+    {},
+  );
   const [originIata, setOriginIata] = useState("");
   const [destinationIata, setDestinationIata] = useState("");
   const [usdByFlightId, setUsdByFlightId] = useState<Record<string, number>>({});
@@ -953,6 +957,13 @@ function TravelPageContent() {
                   const outboundLast = outboundSegments[outboundSegments.length - 1];
                   const inboundFirst = inboundSegments[0];
                   const inboundLast = inboundSegments[inboundSegments.length - 1];
+                  const primaryCarrierSegment = outboundSegments[0] ?? inboundSegments[0];
+                  const logoCandidates = getAirlineLogoCandidates(
+                    primaryCarrierSegment?.carrierCode,
+                    primaryCarrierSegment?.carrierName,
+                  );
+                  const logoAttempt = logoAttemptByFlightId[flight.id] ?? 0;
+                  const logoSrc = logoCandidates[logoAttempt] ?? null;
                   const isSelected = selectedFlightId === flight.id;
                   const normalizedCurrency = normalizeCurrencyCode(flight.currency);
                   const usdValue = usdByFlightId[flight.id];
@@ -991,10 +1002,35 @@ function TravelPageContent() {
                               </p>
                             )}
                           </div>
-                          <Badge variant="outline" className="shrink-0">
-                            <Plane className="mr-1 h-3.5 w-3.5" />
-                            {flight.itineraries.length > 1 ? "Round-trip" : "One-way"}
-                          </Badge>
+                          <div className="flex items-center gap-2">
+                            <div className="flex h-8 w-16 items-center justify-center overflow-hidden rounded-md border border-border bg-background px-1">
+                              {logoSrc ? (
+                                // eslint-disable-next-line @next/next/no-img-element
+                                <img
+                                  src={logoSrc}
+                                  alt={`${primaryCarrierSegment?.carrierName ?? "Airline"} logo`}
+                                  className="max-h-5 w-auto object-contain"
+                                  onError={() => {
+                                    setLogoAttemptByFlightId((prev) => {
+                                      const currentAttempt = prev[flight.id] ?? 0;
+                                      if (currentAttempt >= logoCandidates.length - 1) {
+                                        return { ...prev, [flight.id]: logoCandidates.length };
+                                      }
+                                      return { ...prev, [flight.id]: currentAttempt + 1 };
+                                    });
+                                  }}
+                                />
+                              ) : (
+                                <span className="text-[10px] font-medium uppercase text-muted-foreground">
+                                  {primaryCarrierSegment?.carrierCode ?? "N/A"}
+                                </span>
+                              )}
+                            </div>
+                            <Badge variant="outline" className="shrink-0">
+                              <Plane className="mr-1 h-3.5 w-3.5" />
+                              {flight.itineraries.length > 1 ? "Round-trip" : "One-way"}
+                            </Badge>
+                          </div>
                         </div>
 
                         {outboundFirst && outboundLast && (
