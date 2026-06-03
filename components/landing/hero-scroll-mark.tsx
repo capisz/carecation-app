@@ -5,9 +5,11 @@ import Image from "next/image";
 import { motion, useScroll, useTransform } from "framer-motion";
 
 export function HeroScrollMark({
+  src,
   lightSrc = "/brand/carecation-heart-light.png",
   darkSrc = "/brand/carecation-heart-dark.png",
 }: {
+  src?: string;
   lightSrc?: string;
   darkSrc?: string;
 }) {
@@ -37,6 +39,35 @@ export function HeroScrollMark({
   const opacity = useTransform(scrollYProgress, [0, 0.8, 1], [1, 0.55, 0]);
   const scale = useTransform(scrollYProgress, [0, 1], [1, 0.92]);
   const rotate = useTransform(scrollYProgress, [0, 1], [0, 6]);
+  const lightMediaSrc = src ?? lightSrc;
+  const darkMediaSrc = src ?? darkSrc;
+  const isVideoMedia = (value: string) => /\.(mp4|webm|ogg)$/i.test(value);
+  const mediaClassName = "w-[320px] max-w-[34vw] h-auto select-none";
+
+  const renderMedia = (value: string, className: string) =>
+    isVideoMedia(value) ? (
+      <video
+        src={value}
+        aria-hidden="true"
+        autoPlay
+        loop
+        muted
+        playsInline
+        preload="auto"
+        className={`${className} ${mediaClassName}`}
+      />
+    ) : (
+      <Image
+        src={value}
+        alt=""
+        aria-hidden="true"
+        width={1000}
+        height={1000}
+        priority
+        loading="eager"
+        className={`${className} ${mediaClassName}`}
+      />
+    );
 
   return (
     <div
@@ -59,29 +90,8 @@ export function HeroScrollMark({
               }
         }
       >
-        {/* Light mode */}
-        <Image
-          src={lightSrc}
-          alt=""
-          aria-hidden="true"
-          width={1000}
-          height={1000}
-          priority
-          loading="eager"
-          className="block dark:hidden w-[320px] max-w-[34vw] h-auto select-none"
-        />
-
-        {/* Dark mode */}
-        <Image
-          src={darkSrc}
-          alt=""
-          aria-hidden="true"
-          width={1000}
-          height={1000}
-          priority
-          loading="eager"
-          className="hidden dark:block w-[320px] max-w-[34vw] h-auto select-none"
-        />
+        {renderMedia(lightMediaSrc, "block dark:hidden")}
+        {renderMedia(darkMediaSrc, "hidden dark:block")}
       </motion.div>
     </div>
   );

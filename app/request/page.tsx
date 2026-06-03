@@ -17,7 +17,7 @@ import { Badge } from "@/components/ui/badge";
 import { ArrowLeft, CheckCircle2, MapPin, Send } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { Toaster } from "@/components/ui/toaster";
-import { upsertHealthcareEstimate } from "@/lib/itinerary-plan";
+import { readActivePlanId, upsertHealthcareEstimate } from "@/lib/itinerary-plan";
 
 function RequestContent() {
   usePageReady();
@@ -39,14 +39,20 @@ function RequestContent() {
     setForm((prev) => ({ ...prev, [key]: value }));
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     const payload = {
       ...form,
       providerId: provider?.id,
       providerName: provider?.name,
+      planId: readActivePlanId(),
     };
-    console.log("Quote request payload:", payload);
+
+    await fetch("/api/quote-requests", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload),
+    }).catch(() => null);
 
     if (provider) {
       upsertHealthcareEstimate({

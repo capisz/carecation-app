@@ -85,6 +85,40 @@ export default function TestimonialsPage() {
 
   useEffect(() => {
     window.scrollTo({ top: 0, left: 0, behavior: "auto" });
+    fetch("/api/testimonials")
+      .then((response) => response.json())
+      .then((data) => {
+        const apiTestimonials = Array.isArray(data.testimonials)
+          ? data.testimonials
+          : [];
+        if (apiTestimonials.length === 0) return;
+
+        setTestimonials(
+          apiTestimonials.map((testimonial: {
+            id: string;
+            institution: string;
+            rating: number;
+            review: string;
+            reviewer_name: string | null;
+            anonymous: boolean;
+            created_at: string;
+          }) => ({
+            id: testimonial.id,
+            institution: testimonial.institution,
+            rating: testimonial.rating,
+            review: testimonial.review,
+            reviewerLabel: testimonial.anonymous
+              ? "Anonymous"
+              : testimonial.reviewer_name || "Anonymous",
+            submittedAt: new Date(testimonial.created_at).toLocaleDateString(undefined, {
+              year: "numeric",
+              month: "short",
+              day: "numeric",
+            }),
+          })),
+        );
+      })
+      .catch(() => null);
   }, []);
 
   const update = <K extends keyof TestimonialForm>(
@@ -94,7 +128,7 @@ export default function TestimonialsPage() {
     setForm((prev) => ({ ...prev, [key]: value }));
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setRatingTouched(true);
 
@@ -110,20 +144,26 @@ export default function TestimonialsPage() {
       reviewerName: form.anonymous ? null : form.reviewerName.trim(),
     };
 
-    console.log("Testimonial submission payload:", payload);
+    const response = await fetch("/api/testimonials", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload),
+    }).catch(() => null);
 
     const reviewerLabel = payload.anonymous
       ? "Anonymous"
       : payload.reviewerName || "Anonymous";
+    const apiPayload = response?.ok ? await response.json().catch(() => null) : null;
+    const apiTestimonial = apiPayload?.testimonial;
 
     setTestimonials((prev) => [
       {
-        id: `${Date.now()}`,
-        institution: payload.institution,
-        rating: payload.rating,
-        review: payload.review,
+        id: apiTestimonial?.id ?? `${Date.now()}`,
+        institution: apiTestimonial?.institution ?? payload.institution,
+        rating: apiTestimonial?.rating ?? payload.rating,
+        review: apiTestimonial?.review ?? payload.review,
         reviewerLabel,
-        submittedAt: new Date().toLocaleDateString(undefined, {
+        submittedAt: new Date(apiTestimonial?.created_at ?? Date.now()).toLocaleDateString(undefined, {
           year: "numeric",
           month: "short",
           day: "numeric",

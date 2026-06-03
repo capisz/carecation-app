@@ -4,6 +4,8 @@ import {
   type HotelSearchInput,
   type NormalizedHotelResult,
 } from "@/lib/amadeus";
+import { jsonError } from "@/lib/api-response";
+import { checkRateLimit, getClientIp } from "@/lib/rate-limit";
 
 const IATA_CODE_REGEX = /^[A-Z]{3}$/;
 const DATE_REGEX = /^\d{4}-\d{2}-\d{2}$/;
@@ -138,16 +140,21 @@ function validateHotelBody(body: HotelSearchBody): {
 
 export async function POST(request: Request) {
   let validatedInput: HotelSearchInput | null = null;
+  const rateLimit = checkRateLimit({
+    key: `hotels:${getClientIp(request)}`,
+    limit: 30,
+    windowMs: 60_000,
+  });
+  if (!rateLimit.ok) {
+    return jsonError("Too many hotel searches. Try again shortly.", 429);
+  }
 
   try {
     const body = (await request.json()) as HotelSearchBody;
     const validated = validateHotelBody(body);
 
     if (!validated.ok) {
-      return NextResponse.json(
-        { error: validated.message },
-        { status: 400 },
-      );
+      return jsonError(validated.message, 400);
     }
 
     validatedInput = validated.input;
@@ -178,9 +185,6 @@ export async function POST(request: Request) {
       });
     }
 
-    return NextResponse.json(
-      { error: "Failed to search hotels." },
-      { status: 500 },
-    );
+    return jsonError("Failed to search hotels.", 500);
   }
 }

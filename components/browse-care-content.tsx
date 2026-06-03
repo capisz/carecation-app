@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import Image from "next/image";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -135,6 +135,7 @@ export function BrowseCareContent() {
   const [searchQuery, setSearchQuery] = useState("");
   const [expandedClinicId, setExpandedClinicId] = useState<string | null>(null);
   const [bookedClinicId, setBookedClinicId] = useState<string | null>(null);
+  const [clinics, setClinics] = useState<ClinicItem[]>(CLINICS);
 
   const procedureFilter = (searchParams.get("procedure") ?? "").trim();
   const preferredDestinationFilters = (searchParams.get("preferredDestinations") ?? "")
@@ -142,9 +143,20 @@ export function BrowseCareContent() {
     .map((value) => value.trim().toLowerCase())
     .filter(Boolean);
 
+  useEffect(() => {
+    fetch("/api/providers")
+      .then((response) => response.json())
+      .then((data) => {
+        if (Array.isArray(data.providers) && data.providers.length > 0) {
+          setClinics(data.providers);
+        }
+      })
+      .catch(() => null);
+  }, []);
+
   const filteredClinics = useMemo(() => {
     const query = searchQuery.trim().toLowerCase();
-    return CLINICS.filter((clinic) => {
+    return clinics.filter((clinic) => {
       const matchesQuery =
         query.length === 0 ||
         clinic.name.toLowerCase().includes(query) ||
@@ -164,11 +176,11 @@ export function BrowseCareContent() {
 
       return matchesQuery && matchesProcedure && matchesPreferredDestinations;
     });
-  }, [searchQuery, procedureFilter, preferredDestinationFilters]);
+  }, [clinics, searchQuery, procedureFilter, preferredDestinationFilters]);
 
   const bookedClinic = useMemo(
-    () => CLINICS.find((clinic) => clinic.id === bookedClinicId) ?? null,
-    [bookedClinicId],
+    () => clinics.find((clinic) => clinic.id === bookedClinicId) ?? null,
+    [clinics, bookedClinicId],
   );
 
   const handleBookQuote = (clinic: ClinicItem) => {

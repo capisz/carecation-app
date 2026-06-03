@@ -3,6 +3,8 @@ import {
   convertAmountToUsd,
   isCurrencyConversionError,
 } from "@/lib/currency";
+import { jsonError } from "@/lib/api-response";
+import { checkRateLimit, getClientIp } from "@/lib/rate-limit";
 
 type CurrencyConvertBody = {
   amount?: number;
@@ -10,23 +12,26 @@ type CurrencyConvertBody = {
 };
 
 export async function POST(request: Request) {
+  const rateLimit = checkRateLimit({
+    key: `currency:${getClientIp(request)}`,
+    limit: 120,
+    windowMs: 60_000,
+  });
+  if (!rateLimit.ok) {
+    return jsonError("Too many conversion requests. Try again shortly.", 429);
+  }
+
   try {
     const body = (await request.json()) as CurrencyConvertBody;
     const amount = Number(body.amount);
     const currency = (body.currency ?? "").trim();
 
     if (!Number.isFinite(amount) || amount < 0) {
-      return NextResponse.json(
-        { error: "amount must be a non-negative number." },
-        { status: 400 },
-      );
+      return jsonError("amount must be a non-negative number.", 400);
     }
 
     if (!currency) {
-      return NextResponse.json(
-        { error: "currency is required." },
-        { status: 400 },
-      );
+      return jsonError("currency is required.", 400);
     }
 
     const conversion = await convertAmountToUsd({
@@ -38,15 +43,9 @@ export async function POST(request: Request) {
   } catch (error) {
     if (isCurrencyConversionError(error)) {
       const status = error.status >= 400 && error.status < 500 ? error.status : 502;
-      return NextResponse.json(
-        { error: error.message, details: error.details },
-        { status },
-      );
+      return jsonError(error.message, status, error.details);
     }
 
-    return NextResponse.json(
-      { error: "Failed to convert currency." },
-      { status: 500 },
-    );
+    return jsonError("Failed to convert currency.", 500);
   }
 }

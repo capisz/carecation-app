@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { getAuthenticatedUser } from "@/lib/supabase/server";
 
 /**
  * POST /api/providers/submit
@@ -36,28 +37,49 @@ export async function POST(request: NextRequest) {
       }
     }
     
-    // In production, this would:
-    // 1. Save to database
-    // 2. Send confirmation email to provider
-    // 3. Notify admin team
-    // 4. Create onboarding ticket
-    
-    console.log("[Provider Submission]", {
-      timestamp: new Date().toISOString(),
-      clinic: body.clinicName,
-      type: body.providerType,
-      location: `${body.city}, ${body.country}`,
-      contact: body.email,
-    });
-    
-    // Simulate processing delay
-    await new Promise((resolve) => setTimeout(resolve, 500));
+    const { supabase, user } = await getAuthenticatedUser();
+    let submissionId = `PROV-${Date.now()}`;
+
+    if (supabase) {
+      const { data, error } = await supabase
+        .from("provider_applications")
+        .insert({
+          submitted_by: user?.id ?? null,
+          clinic_name: body.clinicName,
+          provider_type: body.providerType,
+          contact_name: body.contactName,
+          email: body.email,
+          phone: body.phone,
+          country: body.country,
+          city: body.city,
+          payload: body,
+        })
+        .select("id")
+        .single();
+
+      if (error) {
+        return NextResponse.json(
+          { error: "Failed to save provider application", details: error.message },
+          { status: 500 },
+        );
+      }
+
+      submissionId = data.id;
+    } else {
+      console.log("[Provider Submission]", {
+        timestamp: new Date().toISOString(),
+        clinic: body.clinicName,
+        type: body.providerType,
+        location: `${body.city}, ${body.country}`,
+        contact: body.email,
+      });
+    }
     
     return NextResponse.json(
       {
         success: true,
         message: "Provider application submitted successfully",
-        submissionId: `PROV-${Date.now()}`,
+        submissionId,
       },
       { status: 200 }
     );

@@ -1,6 +1,14 @@
 import "server-only";
 
-const AMADEUS_BASE_URL = "https://test.api.amadeus.com";
+function getAmadeusBaseUrl(): string {
+  if (process.env.AMADEUS_BASE_URL) {
+    return process.env.AMADEUS_BASE_URL;
+  }
+
+  return process.env.AMADEUS_ENV === "production"
+    ? "https://api.amadeus.com"
+    : "https://test.api.amadeus.com";
+}
 
 type TokenCache = {
   accessToken: string;
@@ -214,7 +222,7 @@ async function getAccessToken(forceRefresh = false): Promise<string> {
     client_secret: getRequiredEnv("AMADEUS_CLIENT_SECRET"),
   });
 
-  const response = await fetch(`${AMADEUS_BASE_URL}/v1/security/oauth2/token`, {
+  const response = await fetch(`${getAmadeusBaseUrl()}/v1/security/oauth2/token`, {
     method: "POST",
     headers: {
       "Content-Type": "application/x-www-form-urlencoded",
@@ -250,7 +258,7 @@ async function amadeusGet<T>(
   retryOnUnauthorized = true,
 ): Promise<T> {
   const accessToken = await getAccessToken();
-  const url = new URL(`${AMADEUS_BASE_URL}${path}`);
+  const url = new URL(`${getAmadeusBaseUrl()}${path}`);
 
   for (const [key, value] of Object.entries(params)) {
     if (value !== undefined && value !== "") {

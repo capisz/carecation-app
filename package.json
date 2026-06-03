@@ -2,10 +2,18 @@
   "name": "my-project",
   "version": "0.1.0",
   "private": true,
+  "packageManager": "pnpm@10.0.0",
+  "engines": {
+    "node": ">=22 <23"
+  },
   "scripts": {
-    "dev": "next dev",
+    "dev": "next dev --webpack",
+    "dev:turbo": "next dev --turbo",
     "build": "next build",
     "start": "next start",
+    "start:local": "next start -p 3021",
+    "preview": "pnpm build && pnpm start:local",
+    "check:readiness": "node scripts/check-readiness.mjs",
     "lint": "eslint ."
   },
   "dependencies": {
@@ -37,6 +45,8 @@
     "@radix-ui/react-toggle": "1.1.1",
     "@radix-ui/react-toggle-group": "1.1.1",
     "@radix-ui/react-tooltip": "1.1.6",
+    "@supabase/ssr": "^0.10.3",
+    "@supabase/supabase-js": "^2.107.0",
     "autoprefixer": "^10.4.20",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
@@ -65,8 +75,16 @@
     "@types/node": "^22",
     "@types/react": "^19",
     "@types/react-dom": "^19",
+    "eslint": "^9.39.4",
+    "eslint-config-next": "^16.1.6",
     "postcss": "^8.5",
     "tailwindcss": "^3.4.17",
     "typescript": "5.7.3"
+  },
+  "pnpm": {
+    "onlyBuiltDependencies": [
+      "sharp",
+      "unrs-resolver"
+    ]
   }
 }

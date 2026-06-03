@@ -4,6 +4,8 @@ import {
   searchFlights,
   type FlightSearchInput,
 } from "@/lib/amadeus";
+import { jsonError } from "@/lib/api-response";
+import { checkRateLimit, getClientIp } from "@/lib/rate-limit";
 
 const IATA_CODE_REGEX = /^[A-Z]{3}$/;
 const DATE_REGEX = /^\d{4}-\d{2}-\d{2}$/;
@@ -62,15 +64,21 @@ function validateFlightBody(body: FlightSearchBody): {
 }
 
 export async function POST(request: Request) {
+  const rateLimit = checkRateLimit({
+    key: `flights:${getClientIp(request)}`,
+    limit: 30,
+    windowMs: 60_000,
+  });
+  if (!rateLimit.ok) {
+    return jsonError("Too many flight searches. Try again shortly.", 429);
+  }
+
   try {
     const body = (await request.json()) as FlightSearchBody;
     const validated = validateFlightBody(body);
 
     if (!validated.ok) {
-      return NextResponse.json(
-        { error: validated.message },
-        { status: 400 },
-      );
+      return jsonError(validated.message, 400);
     }
 
     const results = await searchFlights(validated.input);
@@ -82,15 +90,9 @@ export async function POST(request: Request) {
   } catch (error) {
     if (isAmadeusApiError(error)) {
       const status = error.status >= 400 && error.status < 500 ? error.status : 502;
-      return NextResponse.json(
-        { error: error.message, details: error.details },
-        { status },
-      );
+      return jsonError(error.message, status, error.details);
     }
 
-    return NextResponse.json(
-      { error: "Failed to search flights." },
-      { status: 500 },
-    );
+    return jsonError("Failed to search flights.", 500);
   }
 }

@@ -15,6 +15,30 @@ export type TravelLocationProfile = {
 
 export const TRAVEL_LOCATION_PROFILES: TravelLocationProfile[] = [
   {
+    country: "United States",
+    recommendedCity: "New York",
+    recommendedCityCode: "NYC",
+    aliases: [
+      "united states",
+      "usa",
+      "us",
+      "new york",
+      "los angeles",
+      "miami",
+      "chicago",
+      "atlanta",
+    ],
+    airports: [
+      { iata: "JFK", cityCode: "NYC", city: "New York", name: "John F. Kennedy International Airport" },
+      { iata: "EWR", cityCode: "NYC", city: "New York", name: "Newark Liberty International Airport" },
+      { iata: "LGA", cityCode: "NYC", city: "New York", name: "LaGuardia Airport" },
+      { iata: "LAX", cityCode: "LAX", city: "Los Angeles", name: "Los Angeles International Airport" },
+      { iata: "MIA", cityCode: "MIA", city: "Miami", name: "Miami International Airport" },
+      { iata: "ORD", cityCode: "CHI", city: "Chicago", name: "O'Hare International Airport" },
+      { iata: "ATL", cityCode: "ATL", city: "Atlanta", name: "Hartsfield-Jackson Atlanta International Airport" },
+    ],
+  },
+  {
     country: "Thailand",
     recommendedCity: "Bangkok",
     recommendedCityCode: "BKK",

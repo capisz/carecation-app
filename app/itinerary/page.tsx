@@ -9,6 +9,8 @@ import { ItineraryTimeline, generateItinerary } from "@/components/itinerary-tim
 import { getProviderById } from "@/lib/data/providers-repo";
 import { findTravelLocation, TRAVEL_LOCATION_PROFILES } from "@/lib/travel-locations";
 import {
+  loadItineraryPlan,
+  readActivePlanId,
   readItineraryPlan,
   type ItineraryPlan,
 } from "@/lib/itinerary-plan";
@@ -227,6 +229,24 @@ function ItineraryContent() {
     };
 
     syncPlan();
+    const localPlan = readItineraryPlan();
+    const hasLocalPlan = Boolean(
+      localPlan.flight ||
+        localPlan.hotel ||
+        localPlan.healthcareEstimate ||
+        localPlan.travelRecommendation,
+    );
+    if (!hasLocalPlan) {
+      fetch("/api/plans/active")
+        .then((response) => (response.ok ? response.json() : null))
+        .then((data) => {
+          if (data?.plan?.plan_snapshot) {
+            loadItineraryPlan(data.plan.plan_snapshot, data.plan.id);
+            setPlan(data.plan.plan_snapshot);
+          }
+        })
+        .catch(() => null);
+    }
     window.addEventListener("storage", syncPlan);
     window.addEventListener("focus", syncPlan);
 
@@ -282,6 +302,39 @@ function ItineraryContent() {
       totalMax,
     });
   }, [hasTravelSelection, plan, destinationCountry, totalMin, totalMax]);
+
+  const handleAffiliateClick = (option: AffiliateBookingOption) => {
+    const payload = {
+      partner: option.key,
+      outboundUrl: option.href,
+      planId: readActivePlanId(),
+      destinationCountry,
+      metadata: {
+        label: option.label,
+        totalMinUsd: Math.round(totalMin),
+        totalMaxUsd: Math.round(totalMax),
+        hasFlight: Boolean(plan.flight),
+        hasHotel: Boolean(plan.hotel),
+        hasHealthcareEstimate: Boolean(plan.healthcareEstimate),
+      },
+    };
+
+    const body = JSON.stringify(payload);
+    if (navigator.sendBeacon) {
+      navigator.sendBeacon(
+        "/api/affiliate/click",
+        new Blob([body], { type: "application/json" }),
+      );
+      return;
+    }
+
+    fetch("/api/affiliate/click", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body,
+      keepalive: true,
+    }).catch(() => null);
+  };
 
   if (!hasAnyPlanData) {
     return (
@@ -626,6 +679,7 @@ function ItineraryContent() {
                     rel="noopener noreferrer nofollow sponsored"
                     aria-label={option.label}
                     title={option.description}
+                    onClick={() => handleAffiliateClick(option)}
                   >
                     {option.label}
                   </a>

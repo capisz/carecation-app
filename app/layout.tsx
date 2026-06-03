@@ -6,6 +6,7 @@ import { OverlayProvider } from "@/components/overlay/overlay-provider";
 import { NavOverlay } from "@/components/overlay/nav-overlay";
 import { LoadingProvider } from "@/components/loading-provider";
 import { LoadingOverlay } from "@/components/ecg-plane-animation";
+import { CookieConsent } from "@/components/cookie-consent";
 import { SuppressWarnings } from "./suppress-warnings";
 import "./globals.css";
 
@@ -69,6 +70,7 @@ export default function RootLayout({
             <OverlayProvider>
               <NavOverlay />
               {children}
+              <CookieConsent />
             </OverlayProvider>
           </LoadingProvider>
         </ThemeProvider>

@@ -6,9 +6,10 @@ import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { SmartLink } from "./smart-link";
 import { Button } from "@/components/ui/button";
-import { Menu, X, Sun, Moon, ArrowRight } from "lucide-react";
+import { FolderOpen, LogIn, Menu, X, Sun, Moon, ArrowRight } from "lucide-react";
 import { useTheme } from "next-themes";
 import { useOverlay } from "./overlay/overlay-provider";
+import { getSupabaseBrowserClient } from "@/lib/supabase/client";
 import {
   clearItineraryPlan,
   readItineraryPlan,
@@ -18,8 +19,8 @@ import {
 
 const footerHeaderLinks = [
   { label: "Testimonials", href: "/testimonials" },
-  { label: "Transparency", href: "#footer-transparency" },
-  { label: "Feedback", href: "#footer-feedback" },
+  { label: "Transparency", href: "/privacy" },
+  { label: "Feedback", href: "/support" },
 ];
 
 const footerColumns = [
@@ -36,8 +37,10 @@ const footerColumns = [
     title: "Resources",
     links: [
       { label: "FAQ", href: "#footer-faq", id: "footer-faq" },
-      { label: "Customer Support", href: "#footer-feedback", id: "footer-feedback" },
-      { label: "Legal", href: "#footer-transparency", id: "footer-transparency" },
+      { label: "Customer Support", href: "/support" },
+      { label: "Privacy", href: "/privacy" },
+      { label: "Terms", href: "/terms" },
+      { label: "Cookies", href: "/cookies" },
       { label: "Request Form", href: "/request" },
     ],
   },
@@ -46,7 +49,7 @@ const footerColumns = [
     links: [
       { label: "Provider Application", href: "/providers" },
       { label: "Provider Info", href: "#footer-providers", id: "footer-providers" },
-      { label: "Directory Standards", href: "#footer-transparency" },
+      { label: "Medical Disclaimer", href: "/medical-disclaimer" },
     ],
   },
 ];
@@ -66,6 +69,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
   const { runNavOverlay } = useOverlay();
   const [mobileOpen, setMobileOpen] = useState(false);
   const [hasStartedPlan, setHasStartedPlan] = useState(false);
+  const [userEmail, setUserEmail] = useState<string | null>(null);
   const { resolvedTheme, setTheme } = useTheme();
 
   useEffect(() => {
@@ -73,6 +77,16 @@ export function AppShell({ children }: { children: React.ReactNode }) {
       const plan = readItineraryPlan();
       const started = hasStartedItinerary(plan);
       setHasStartedPlan(started);
+      if (!started) {
+        fetch("/api/plans/active")
+          .then((response) => (response.ok ? response.json() : null))
+          .then((data) => {
+            if (data?.plan?.plan_snapshot) {
+              setHasStartedPlan(true);
+            }
+          })
+          .catch(() => null);
+      }
     };
 
     syncPlanState();
@@ -84,6 +98,29 @@ export function AppShell({ children }: { children: React.ReactNode }) {
       window.removeEventListener("storage", syncPlanState);
       window.removeEventListener("focus", syncPlanState);
       window.removeEventListener(ITINERARY_PLAN_UPDATED_EVENT, syncPlanState);
+    };
+  }, []);
+
+  useEffect(() => {
+    const supabase = getSupabaseBrowserClient();
+    if (!supabase) return;
+
+    let mounted = true;
+    supabase.auth.getUser().then(({ data }) => {
+      if (mounted) {
+        setUserEmail(data.user?.email ?? null);
+      }
+    });
+
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange((_event, session) => {
+      setUserEmail(session?.user.email ?? null);
+    });
+
+    return () => {
+      mounted = false;
+      subscription.unsubscribe();
     };
   }, []);
 
@@ -150,6 +187,22 @@ export function AppShell({ children }: { children: React.ReactNode }) {
               <Sun className="h-5 w-5 rotate-0 scale-100 transition-all dark:-rotate-90 dark:scale-0" aria-hidden="true" />
               <Moon className="absolute h-5 w-5 rotate-90 scale-0 transition-all dark:rotate-0 dark:scale-100" aria-hidden="true" />
             </Button>
+
+            {userEmail ? (
+              <Button asChild variant="outline">
+                <Link href="/account/plans">
+                  <FolderOpen className="mr-2 h-4 w-4" aria-hidden="true" />
+                  My plans
+                </Link>
+              </Button>
+            ) : (
+              <Button asChild variant="outline">
+                <Link href="/login">
+                  <LogIn className="mr-2 h-4 w-4" aria-hidden="true" />
+                  Sign in
+                </Link>
+              </Button>
+            )}
 
             {hasStartedPlan ? (
               <>
@@ -244,6 +297,28 @@ export function AppShell({ children }: { children: React.ReactNode }) {
                   </Button>
                 </div>
               )}
+              <div className="mt-2 flex items-center gap-2">
+                {userEmail ? (
+                  <>
+                    <Button asChild variant="outline" className="flex-1">
+                      <Link href="/account/plans">
+                        <FolderOpen className="mr-2 h-4 w-4" aria-hidden="true" />
+                        My plans
+                      </Link>
+                    </Button>
+                    <Button asChild variant="outline" className="flex-1">
+                      <Link href="/auth/logout">Sign out</Link>
+                    </Button>
+                  </>
+                ) : (
+                  <Button asChild variant="outline" className="flex-1">
+                    <Link href="/login">
+                      <LogIn className="mr-2 h-4 w-4" aria-hidden="true" />
+                      Sign in
+                    </Link>
+                  </Button>
+                )}
+              </div>
             </nav>
           </div>
         )}
