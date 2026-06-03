@@ -5,6 +5,7 @@ import {
   type NormalizedHotelResult,
 } from "@/lib/amadeus";
 import { jsonError } from "@/lib/api-response";
+import { addRepresentativeHotelImages } from "@/lib/pexels";
 import { checkRateLimit, getClientIp } from "@/lib/rate-limit";
 
 const IATA_CODE_REGEX = /^[A-Z]{3}$/;
@@ -162,24 +163,37 @@ export async function POST(request: Request) {
 
     if (results.length === 0) {
       const fallbackResults = buildFallbackHotels(validatedInput);
+      const resultsWithImages = await addRepresentativeHotelImages(
+        fallbackResults,
+        validatedInput.cityCode,
+      );
       return NextResponse.json({
-        results: fallbackResults,
-        count: fallbackResults.length,
+        results: resultsWithImages,
+        count: resultsWithImages.length,
         warning:
           "Live hotel offers were unavailable for the selected dates. Showing estimated options instead.",
       });
     }
 
-    return NextResponse.json({
+    const resultsWithImages = await addRepresentativeHotelImages(
       results,
-      count: results.length,
+      validatedInput.cityCode,
+    );
+
+    return NextResponse.json({
+      results: resultsWithImages,
+      count: resultsWithImages.length,
     });
   } catch {
     if (validatedInput) {
       const fallbackResults = buildFallbackHotels(validatedInput);
+      const resultsWithImages = await addRepresentativeHotelImages(
+        fallbackResults,
+        validatedInput.cityCode,
+      );
       return NextResponse.json({
-        results: fallbackResults,
-        count: fallbackResults.length,
+        results: resultsWithImages,
+        count: resultsWithImages.length,
         warning:
           "Live hotel search is temporarily unavailable. Showing estimated options so you can continue planning.",
       });

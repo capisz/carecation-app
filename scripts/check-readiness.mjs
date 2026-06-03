@@ -129,6 +129,28 @@ async function checkSupabase(env) {
   }
 }
 
+async function checkPexels(env) {
+  const hasPexelsKey = hasValue(env.PEXELS_API_KEY);
+  logCheck("Pexels API key present", hasPexelsKey);
+
+  if (!hasPexelsKey) {
+    return;
+  }
+
+  const url = new URL("https://api.pexels.com/v1/search");
+  url.searchParams.set("query", "Bangkok hotel exterior");
+  url.searchParams.set("orientation", "landscape");
+  url.searchParams.set("per_page", "1");
+
+  const response = await fetch(url, {
+    headers: {
+      Authorization: env.PEXELS_API_KEY,
+    },
+  });
+
+  logCheck("Pexels image search", response.ok, `${response.status}`);
+}
+
 async function main() {
   const env = { ...process.env, ...loadDotEnvLocal() };
   const majorNode = Number(process.versions.node.split(".")[0]);
@@ -142,6 +164,9 @@ async function main() {
 
   console.log("\nSupabase");
   await checkSupabase(env);
+
+  console.log("\nPexels");
+  await checkPexels(env);
 
   console.log("\nRequired Supabase redirect URLs:");
   console.log("- http://localhost:3000/auth/callback");

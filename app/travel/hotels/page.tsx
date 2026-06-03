@@ -27,6 +27,13 @@ type HotelResult = {
   roomDescription: string | null;
   boardType: string | null;
   cancellationPolicy: string | null;
+  imageUrl?: string;
+  imageAlt?: string;
+  imageSource?: string;
+  imageSourceUrl?: string;
+  imagePhotographer?: string;
+  imagePhotographerUrl?: string;
+  imageIsRepresentative?: boolean;
 };
 
 type SearchResponse<T> = {
@@ -88,6 +95,15 @@ function getHotelImageCandidates(hotelName: string): string[] {
   );
 }
 
+function getHotelImageSources(hotel: HotelResult): string[] {
+  return Array.from(
+    new Set([
+      hotel.imageUrl,
+      ...getHotelImageCandidates(hotel.name),
+    ].filter(Boolean) as string[]),
+  );
+}
+
 async function postJson<T>(url: string, payload: unknown): Promise<T> {
   const response = await fetch(url, {
     method: "POST",
@@ -145,6 +161,13 @@ function toPlannedHotel(
     conversionDate: conversion.rateDate,
     checkInDate: hotel.checkInDate,
     checkOutDate: hotel.checkOutDate,
+    imageUrl: hotel.imageUrl,
+    imageAlt: hotel.imageAlt,
+    imageSource: hotel.imageSource,
+    imageSourceUrl: hotel.imageSourceUrl,
+    imagePhotographer: hotel.imagePhotographer,
+    imagePhotographerUrl: hotel.imagePhotographerUrl,
+    imageIsRepresentative: hotel.imageIsRepresentative,
   };
 }
 
@@ -420,10 +443,11 @@ function HotelsPageContent() {
             <div className="mb-8 grid gap-3 lg:grid-cols-2 xl:grid-cols-3">
               {visibleHotels.map((hotel) => {
                 const isSelected = selectedHotelId === hotel.id;
-                const imageCandidates = getHotelImageCandidates(hotel.name);
+                const imageCandidates = getHotelImageSources(hotel);
                 const imageAttempt = imageAttemptById[hotel.id] ?? 0;
                 const imageSrc =
                   imageCandidates[Math.min(imageAttempt, imageCandidates.length - 1)];
+                const isUsingPexelsImage = imageSrc === hotel.imageUrl;
                 const normalizedCurrency = normalizeCurrencyCode(hotel.currency);
                 const usdValue = usdByHotelId[hotel.id];
                 const conversionError = conversionErrorByHotelId[hotel.id];
@@ -446,12 +470,12 @@ function HotelsPageContent() {
                     )}
                   >
                     <CardContent className="p-0">
-                      {/* Borderless top image area for /public/hotels/<Hotel-Name>.jpg */}
+                      {/* Borderless top image area: Pexels representative image, then local hotel fallback. */}
                       <div className="relative h-36 w-full overflow-hidden">
                         {/* eslint-disable-next-line @next/next/no-img-element */}
                         <img
                           src={imageSrc}
-                          alt={hotel.name}
+                          alt={hotel.imageAlt ?? hotel.name}
                           className="h-full w-full object-cover"
                           onError={() =>
                             setImageAttemptById((prev) => ({
@@ -460,6 +484,22 @@ function HotelsPageContent() {
                             }))
                           }
                         />
+                        {isUsingPexelsImage && (
+                          <div className="absolute inset-x-0 bottom-0 bg-background/85 px-3 py-1 text-[10px] text-muted-foreground backdrop-blur-sm dark:bg-background/75">
+                            {hotel.imagePhotographer && hotel.imageSourceUrl ? (
+                              <a
+                                href={hotel.imageSourceUrl}
+                                target="_blank"
+                                rel="noreferrer"
+                                className="underline underline-offset-2"
+                              >
+                                Representative image by {hotel.imagePhotographer} on Pexels
+                              </a>
+                            ) : (
+                              "Representative hotel image"
+                            )}
+                          </div>
+                        )}
                       </div>
 
                       <div className="p-4">

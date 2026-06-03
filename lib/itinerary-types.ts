@@ -27,6 +27,13 @@ export type PlannedHotel = {
   conversionDate?: string | null;
   checkInDate: string;
   checkOutDate: string;
+  imageUrl?: string;
+  imageAlt?: string;
+  imageSource?: string;
+  imageSourceUrl?: string;
+  imagePhotographer?: string;
+  imagePhotographerUrl?: string;
+  imageIsRepresentative?: boolean;
 };
 
 export type HealthcareEstimate = {

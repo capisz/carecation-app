@@ -88,6 +88,13 @@ export type NormalizedHotelResult = {
   roomDescription: string | null;
   boardType: string | null;
   cancellationPolicy: string | null;
+  imageUrl?: string;
+  imageAlt?: string;
+  imageSource?: string;
+  imageSourceUrl?: string;
+  imagePhotographer?: string;
+  imagePhotographerUrl?: string;
+  imageIsRepresentative?: boolean;
 };
 
 export type NormalizedLocationResult = {
