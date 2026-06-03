@@ -447,7 +447,6 @@ function HotelsPageContent() {
                 const imageAttempt = imageAttemptById[hotel.id] ?? 0;
                 const imageSrc =
                   imageCandidates[Math.min(imageAttempt, imageCandidates.length - 1)];
-                const isUsingPexelsImage = imageSrc === hotel.imageUrl;
                 const normalizedCurrency = normalizeCurrencyCode(hotel.currency);
                 const usdValue = usdByHotelId[hotel.id];
                 const conversionError = conversionErrorByHotelId[hotel.id];
@@ -470,7 +469,7 @@ function HotelsPageContent() {
                     )}
                   >
                     <CardContent className="p-0">
-                      {/* Borderless top image area: Pexels representative image, then local hotel fallback. */}
+                      {/* Borderless top image area: sourced hotel image, then local hotel fallback. */}
                       <div className="relative h-36 w-full overflow-hidden">
                         {/* eslint-disable-next-line @next/next/no-img-element */}
                         <img
@@ -484,22 +483,6 @@ function HotelsPageContent() {
                             }))
                           }
                         />
-                        {isUsingPexelsImage && (
-                          <div className="absolute inset-x-0 bottom-0 bg-background/85 px-3 py-1 text-[10px] text-muted-foreground backdrop-blur-sm dark:bg-background/75">
-                            {hotel.imagePhotographer && hotel.imageSourceUrl ? (
-                              <a
-                                href={hotel.imageSourceUrl}
-                                target="_blank"
-                                rel="noreferrer"
-                                className="underline underline-offset-2"
-                              >
-                                Representative image by {hotel.imagePhotographer} on Pexels
-                              </a>
-                            ) : (
-                              "Representative hotel image"
-                            )}
-                          </div>
-                        )}
                       </div>
 
                       <div className="p-4">
