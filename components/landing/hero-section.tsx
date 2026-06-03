@@ -12,12 +12,12 @@ const CYCLE_MS = 4500;
 
 // ---- Stripe animation tuning ----
 const STRIPE_COUNT = 5;
-const LIGHT_STRIPE_OPACITY = 0.24;
+const LIGHT_STRIPE_OPACITY = 0.18;
 const DARK_STRIPE_OPACITY = 0.34;
 
 // Slow crossfades keep the image changes atmospheric instead of flickery.
-const DUR_MIN = 7200;
-const DUR_MAX = 10800;
+const DUR_MIN = 12000;
+const DUR_MAX = 18000;
 
 // No rest - continuous smooth transitions
 const HOLD_MIN = 0;
@@ -141,6 +141,7 @@ export function HeroSection() {
   const stripeToElsRef = useRef<(HTMLDivElement | null)[]>([]);
   const animRef = useRef<StripeAnim[]>([]);
   const rafRef = useRef<number>(0);
+  const preloadedImagesRef = useRef<HTMLImageElement[]>([]);
 
   useEffect(() => {
     if (reduceMotion) return;
@@ -151,6 +152,14 @@ export function HeroSection() {
 
     return () => window.clearInterval(id);
   }, [reduceMotion]);
+
+  useEffect(() => {
+    preloadedImagesRef.current = DESTINATION_IMAGES.map((src) => {
+      const image = new window.Image();
+      image.src = src;
+      return image;
+    });
+  }, []);
 
   useEffect(() => {
     if (reduceMotion) return;
