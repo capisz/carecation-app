@@ -12,7 +12,7 @@ const CYCLE_MS = 4500;
 
 // ---- Stripe animation tuning ----
 const STRIPE_COUNT = 5;
-const LIGHT_STRIPE_OPACITY = 0.2;
+const LIGHT_STRIPE_OPACITY = 0.26;
 const DARK_STRIPE_OPACITY = 0.37;
 
 // Slow crossfades keep the image changes atmospheric instead of flickery.
@@ -236,7 +236,7 @@ export function HeroSection() {
 
   return (
     <section className="relative overflow-hidden" aria-labelledby="hero-heading" style={{ position: 'relative' }}>
-      <div className="absolute inset-0 bg-secondary/40" />
+      <div className="absolute inset-0 bg-secondary/28" />
 
       {/* Continuously shifting destination stripes */}
       <div className="absolute inset-0" aria-hidden="true">
@@ -270,11 +270,11 @@ export function HeroSection() {
                   willChange: "opacity",
                 }}
               />
-              <div className="absolute inset-0 bg-secondary/40 dark:bg-background/45" />
+              <div className="absolute inset-0 bg-secondary/28 dark:bg-background/45" />
             </div>
           ))}
         </div>
-        <div className="absolute inset-0 bg-gradient-to-r from-background/40 via-background/18 to-background/30" />
+        <div className="absolute inset-0 bg-gradient-to-r from-background/28 via-background/10 to-background/22" />
       </div>
 
       <HeroScrollMark src="/brand/heart-plane.webm" />
