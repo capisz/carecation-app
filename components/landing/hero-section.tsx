@@ -12,40 +12,31 @@ const CYCLE_MS = 4500;
 
 // ---- Stripe animation tuning ----
 const STRIPE_COUNT = 5;
-const STRIPE_OPACITY = 0.095;
+const STRIPE_OPACITY = 0.34;
 
 // 2-3x faster for more alive feel
-const DUR_MIN = 600;
-const DUR_MAX = 1200;
+const DUR_MIN = 2600;
+const DUR_MAX = 4200;
 
 // No rest - continuous smooth transitions
 const HOLD_MIN = 0;
 const HOLD_MAX = 0;
 
-// Starting tones (your current vibe)
-const INITIAL_STRIPES_HEX = ["#2b241c", "#3b4031", "#2f2a1f", "#3a3f30", "#2b241c"];
-
-// Palette of possible target tones (keep it close so transitions feel “alive” not chaotic)
-const PALETTE_HEX = [
-  "#2b241c",
-  "#2f2a1f",
-  "#3a3f30",
-  "#3b4031",
-  "#2a231b",
-  "#3c4333",
-  "#2f291f",
-  "#3c4132",
-  "#36402f",
-  "#404634",
-  // slightly lighter olives (helps the fade feel smoother)
-  "#4a553f",
-  "#45513c",
-  "#414b38",
-  // Add more subtle warm/cool shifts for variety
-  "#352e23", "#3f4535", "#32291d", "#424937", "#2d261c",
-  "#4c5841", "#4f5a44", "#38331f", "#444f39", "#2c251a",
-  "#485440", "#3d442f", "#31281e", "#47523d", "#3e4934",
+const DESTINATION_IMAGES = [
+  "/destinations/turkey.jpg",
+  "/destinations/thailand.jpg",
+  "/destinations/mexico.jpg",
+  "/destinations/south-korea.jpg",
+  "/destinations/spain.jpg",
+  "/destinations/japan.jpg",
+  "/destinations/vietnam.jpg",
+  "/destinations/singapore.jpg",
+  "/destinations/netherlands.jpg",
+  "/destinations/taiwan.jpg",
 ];
+
+const INITIAL_STRIPE_IMAGES = DESTINATION_IMAGES.slice(0, STRIPE_COUNT);
+const STRIPE_POSITIONS = ["42% center", "48% center", "50% center", "54% center", "58% center"];
 
 const SLIDES = [
   {
@@ -62,8 +53,6 @@ const SLIDES = [
   },
 ] as const;
 
-type HSL = { h: number; s: number; l: number };
-
 function clamp(n: number, a: number, b: number) {
   return Math.max(a, Math.min(b, n));
 }
@@ -77,79 +66,28 @@ function easeInOutSine(t: number) {
   return -(Math.cos(Math.PI * t) - 1) / 2;
 }
 
-function hexToHsl(hex: string): HSL {
-  const h = hex.replace("#", "").trim();
-  const bigint = parseInt(h.length === 3 ? h.split("").map((c) => c + c).join("") : h, 16);
-  const r = ((bigint >> 16) & 255) / 255;
-  const g = ((bigint >> 8) & 255) / 255;
-  const b = (bigint & 255) / 255;
+function imageCss(src: string) {
+  return `url("${src}")`;
+}
 
-  const max = Math.max(r, g, b);
-  const min = Math.min(r, g, b);
-  const d = max - min;
+function pickDifferentImage(current: string, stripeIndex: number) {
+  if (DESTINATION_IMAGES.length === 0) return current;
+  let next =
+    DESTINATION_IMAGES[
+      (DESTINATION_IMAGES.indexOf(current) + stripeIndex + 2) % DESTINATION_IMAGES.length
+    ];
 
-  let hh = 0;
-  let ss = 0;
-  const ll = (max + min) / 2;
-
-  if (d !== 0) {
-    ss = d / (1 - Math.abs(2 * ll - 1));
-    switch (max) {
-      case r:
-        hh = ((g - b) / d) % 6;
-        break;
-      case g:
-        hh = (b - r) / d + 2;
-        break;
-      case b:
-        hh = (r - g) / d + 4;
-        break;
-    }
-    hh *= 60;
-    if (hh < 0) hh += 360;
+  for (let i = 0; i < 8; i++) {
+    if (next !== current) break;
+    next = DESTINATION_IMAGES[Math.floor(Math.random() * DESTINATION_IMAGES.length)];
   }
 
-  return { h: hh, s: ss * 100, l: ll * 100 };
-}
-
-function hslToCss({ h, s, l }: HSL) {
-  return `hsl(${h.toFixed(1)} ${s.toFixed(1)}% ${l.toFixed(1)}%)`;
-}
-
-function shortestHueDelta(from: number, to: number) {
-  let d = ((to - from) % 360 + 360) % 360;
-  if (d > 180) d -= 360;
-  return d;
-}
-
-function lerp(a: number, b: number, t: number) {
-  return a + (b - a) * t;
-}
-
-function lerpHsl(from: HSL, to: HSL, t: number): HSL {
-  const dh = shortestHueDelta(from.h, to.h);
-  const h = (from.h + dh * t + 360) % 360;
-  return { h, s: lerp(from.s, to.s, t), l: lerp(from.l, to.l, t) };
-}
-
-function pickDifferentTarget(cur: HSL, palette: HSL[]) {
-  if (palette.length === 0) return cur;
-  let next = palette[Math.floor(Math.random() * palette.length)];
-
-  for (let i = 0; i < 15; i++) {
-    const dh = Math.abs(shortestHueDelta(cur.h, next.h));
-    const ds = Math.abs(cur.s - next.s);
-    const dl = Math.abs(cur.l - next.l);
-    // Allow more variation for continuous, alive feel
-    if (dh + ds + dl > 8 && dh + ds + dl < 180) break;
-    next = palette[Math.floor(Math.random() * palette.length)];
-  }
   return next;
 }
 
 type StripeAnim = {
-  from: HSL;
-  to: HSL;
+  from: string;
+  to: string;
   start: number;
   dur: number;
   holdUntil: number;
@@ -163,7 +101,8 @@ export function HeroSection() {
   const [activeIndex, setActiveIndex] = useState(0);
   const slide = useMemo(() => SLIDES[activeIndex], [activeIndex]);
 
-  const stripeElsRef = useRef<(HTMLDivElement | null)[]>([]);
+  const stripeFromElsRef = useRef<(HTMLDivElement | null)[]>([]);
+  const stripeToElsRef = useRef<(HTMLDivElement | null)[]>([]);
   const animRef = useRef<StripeAnim[]>([]);
   const rafRef = useRef<number>(0);
 
@@ -180,46 +119,47 @@ export function HeroSection() {
   useEffect(() => {
     if (reduceMotion) return;
 
-    const palette = PALETTE_HEX.map(hexToHsl);
-    const init = INITIAL_STRIPES_HEX.map(hexToHsl);
-
     const now = performance.now();
 
     animRef.current = Array.from({ length: STRIPE_COUNT }, (_, i) => {
-      const from = init[i % init.length];
-      const to = pickDifferentTarget(from, palette);
+      const from = INITIAL_STRIPE_IMAGES[i % INITIAL_STRIPE_IMAGES.length];
+      const to = pickDifferentImage(from, i);
       const dur = rand(DUR_MIN, DUR_MAX);
       const start = now - rand(0, dur); // desync stripes
       return { from, to, start, dur, holdUntil: now + rand(HOLD_MIN, HOLD_MAX) };
     });
 
     const tick = (ts: number) => {
-      const els = stripeElsRef.current;
+      const fromEls = stripeFromElsRef.current;
+      const toEls = stripeToElsRef.current;
 
       for (let i = 0; i < STRIPE_COUNT; i++) {
-        const el = els[i];
-        if (!el) continue;
+        const fromEl = fromEls[i];
+        const toEl = toEls[i];
+        if (!fromEl || !toEl) continue;
 
         const a = animRef.current[i];
         if (!a) continue;
 
+        fromEl.style.backgroundImage = imageCss(a.from);
+        toEl.style.backgroundImage = imageCss(a.to);
+
         if (ts < a.holdUntil) {
-          el.style.backgroundColor = hslToCss(a.from);
-          el.style.opacity = String(STRIPE_OPACITY);
+          fromEl.style.opacity = String(STRIPE_OPACITY);
+          toEl.style.opacity = "0";
           continue;
         }
 
         const raw = (ts - a.start) / a.dur;
         const t = clamp(raw, 0, 1);
         const eased = easeInOutSine(t);
-        const col = lerpHsl(a.from, a.to, eased);
 
-        el.style.backgroundColor = hslToCss(col);
-        el.style.opacity = String(STRIPE_OPACITY);
+        fromEl.style.opacity = String(STRIPE_OPACITY * (1 - eased));
+        toEl.style.opacity = String(STRIPE_OPACITY * eased);
 
         if (t >= 1) {
           const nextFrom = a.to;
-          const nextTo = pickDifferentTarget(nextFrom, palette);
+          const nextTo = pickDifferentImage(nextFrom, i);
 
           animRef.current[i] = {
             from: nextFrom,
@@ -251,24 +191,45 @@ export function HeroSection() {
     <section className="relative overflow-hidden" aria-labelledby="hero-heading" style={{ position: 'relative' }}>
       <div className="absolute inset-0 bg-secondary/50" />
 
-      {/* Continuously shifting stripes */}
+      {/* Continuously shifting destination stripes */}
       <div className="absolute inset-0" aria-hidden="true">
         <div className="absolute inset-0 flex">
           {Array.from({ length: STRIPE_COUNT }).map((_, i) => (
             <div
               key={i}
-              ref={(el) => {
-                stripeElsRef.current[i] = el;
-              }}
-              className="flex-1"
-              style={{
-                backgroundColor: INITIAL_STRIPES_HEX[i % INITIAL_STRIPES_HEX.length],
-                opacity: STRIPE_OPACITY,
-                willChange: "background-color, opacity",
-              }}
-            />
+              className="relative flex-1 overflow-hidden border-r border-background/10 last:border-r-0"
+            >
+              <div
+                ref={(el) => {
+                  stripeFromElsRef.current[i] = el;
+                }}
+                className="absolute inset-0 bg-cover"
+                style={{
+                  backgroundImage: imageCss(INITIAL_STRIPE_IMAGES[i % INITIAL_STRIPE_IMAGES.length]),
+                  backgroundPosition: STRIPE_POSITIONS[i % STRIPE_POSITIONS.length],
+                  opacity: STRIPE_OPACITY,
+                  willChange: "opacity",
+                }}
+              />
+              <div
+                ref={(el) => {
+                  stripeToElsRef.current[i] = el;
+                }}
+                className="absolute inset-0 bg-cover"
+                style={{
+                  backgroundImage: imageCss(
+                    pickDifferentImage(INITIAL_STRIPE_IMAGES[i % INITIAL_STRIPE_IMAGES.length], i),
+                  ),
+                  backgroundPosition: STRIPE_POSITIONS[i % STRIPE_POSITIONS.length],
+                  opacity: 0,
+                  willChange: "opacity",
+                }}
+              />
+              <div className="absolute inset-0 bg-secondary/55 dark:bg-background/60" />
+            </div>
           ))}
         </div>
+        <div className="absolute inset-0 bg-gradient-to-r from-background/55 via-background/25 to-background/45" />
       </div>
 
       <HeroScrollMark src="/brand/heart-plane.webm" />
