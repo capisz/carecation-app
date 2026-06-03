@@ -12,11 +12,12 @@ const CYCLE_MS = 4500;
 
 // ---- Stripe animation tuning ----
 const STRIPE_COUNT = 5;
-const STRIPE_OPACITY = 0.34;
+const LIGHT_STRIPE_OPACITY = 0.24;
+const DARK_STRIPE_OPACITY = 0.34;
 
-// 2-3x faster for more alive feel
-const DUR_MIN = 2600;
-const DUR_MAX = 4200;
+// Slow crossfades keep the image changes atmospheric instead of flickery.
+const DUR_MIN = 7200;
+const DUR_MAX = 10800;
 
 // No rest - continuous smooth transitions
 const HOLD_MIN = 0;
@@ -33,9 +34,15 @@ const DESTINATION_IMAGES = [
   "/destinations/singapore.jpg",
   "/destinations/netherlands.jpg",
   "/destinations/taiwan.jpg",
+  "/destinations/cuba.jpg",
+  "/destinations/guatemala.jpg",
+  "/destinations/ireland.jpg",
+  "/destinations/norway.jpg",
+  "/destinations/sweden.jpg",
 ];
 
 const INITIAL_STRIPE_IMAGES = DESTINATION_IMAGES.slice(0, STRIPE_COUNT);
+const INITIAL_TARGET_IMAGES = DESTINATION_IMAGES.slice(STRIPE_COUNT, STRIPE_COUNT * 2);
 const STRIPE_POSITIONS = ["42% center", "48% center", "50% center", "54% center", "58% center"];
 
 const SLIDES = [
@@ -70,19 +77,48 @@ function imageCss(src: string) {
   return `url("${src}")`;
 }
 
-function pickDifferentImage(current: string, stripeIndex: number) {
-  if (DESTINATION_IMAGES.length === 0) return current;
-  let next =
-    DESTINATION_IMAGES[
-      (DESTINATION_IMAGES.indexOf(current) + stripeIndex + 2) % DESTINATION_IMAGES.length
-    ];
+function getStripeOpacity() {
+  if (typeof document === "undefined") return LIGHT_STRIPE_OPACITY;
+  return document.documentElement.classList.contains("dark")
+    ? DARK_STRIPE_OPACITY
+    : LIGHT_STRIPE_OPACITY;
+}
 
-  for (let i = 0; i < 8; i++) {
-    if (next !== current) break;
-    next = DESTINATION_IMAGES[Math.floor(Math.random() * DESTINATION_IMAGES.length)];
+function orderedCandidates(current: string, stripeIndex: number) {
+  const currentIndex = Math.max(0, DESTINATION_IMAGES.indexOf(current));
+  const start = (currentIndex + stripeIndex + 4) % DESTINATION_IMAGES.length;
+
+  return DESTINATION_IMAGES.map((_, offset) => DESTINATION_IMAGES[(start + offset) % DESTINATION_IMAGES.length]);
+}
+
+function usedImagesForNextPick(animations: StripeAnim[], stripeIndex: number) {
+  const used = new Set<string>();
+
+  for (let i = 0; i < animations.length; i++) {
+    const animation = animations[i];
+    if (!animation) continue;
+
+    if (i === stripeIndex) {
+      used.add(animation.to);
+      continue;
+    }
+
+    used.add(animation.from);
+    used.add(animation.to);
   }
 
-  return next;
+  return used;
+}
+
+function pickUniqueNextImage(current: string, stripeIndex: number, animations: StripeAnim[]) {
+  const used = usedImagesForNextPick(animations, stripeIndex);
+  const candidates = orderedCandidates(current, stripeIndex);
+
+  return (
+    candidates.find((image) => image !== current && !used.has(image)) ??
+    candidates.find((image) => image !== current && !animations.some((a, i) => i !== stripeIndex && a.from === image)) ??
+    current
+  );
 }
 
 type StripeAnim = {
@@ -123,7 +159,7 @@ export function HeroSection() {
 
     animRef.current = Array.from({ length: STRIPE_COUNT }, (_, i) => {
       const from = INITIAL_STRIPE_IMAGES[i % INITIAL_STRIPE_IMAGES.length];
-      const to = pickDifferentImage(from, i);
+      const to = INITIAL_TARGET_IMAGES[i % INITIAL_TARGET_IMAGES.length];
       const dur = rand(DUR_MIN, DUR_MAX);
       const start = now - rand(0, dur); // desync stripes
       return { from, to, start, dur, holdUntil: now + rand(HOLD_MIN, HOLD_MAX) };
@@ -141,11 +177,13 @@ export function HeroSection() {
         const a = animRef.current[i];
         if (!a) continue;
 
+        const stripeOpacity = getStripeOpacity();
+
         fromEl.style.backgroundImage = imageCss(a.from);
         toEl.style.backgroundImage = imageCss(a.to);
 
         if (ts < a.holdUntil) {
-          fromEl.style.opacity = String(STRIPE_OPACITY);
+          fromEl.style.opacity = String(stripeOpacity);
           toEl.style.opacity = "0";
           continue;
         }
@@ -154,12 +192,12 @@ export function HeroSection() {
         const t = clamp(raw, 0, 1);
         const eased = easeInOutSine(t);
 
-        fromEl.style.opacity = String(STRIPE_OPACITY * (1 - eased));
-        toEl.style.opacity = String(STRIPE_OPACITY * eased);
+        fromEl.style.opacity = String(stripeOpacity * (1 - eased));
+        toEl.style.opacity = String(stripeOpacity * eased);
 
         if (t >= 1) {
           const nextFrom = a.to;
-          const nextTo = pickDifferentImage(nextFrom, i);
+          const nextTo = pickUniqueNextImage(nextFrom, i, animRef.current);
 
           animRef.current[i] = {
             from: nextFrom,
@@ -207,7 +245,7 @@ export function HeroSection() {
                 style={{
                   backgroundImage: imageCss(INITIAL_STRIPE_IMAGES[i % INITIAL_STRIPE_IMAGES.length]),
                   backgroundPosition: STRIPE_POSITIONS[i % STRIPE_POSITIONS.length],
-                  opacity: STRIPE_OPACITY,
+                  opacity: LIGHT_STRIPE_OPACITY,
                   willChange: "opacity",
                 }}
               />
@@ -217,9 +255,7 @@ export function HeroSection() {
                 }}
                 className="absolute inset-0 bg-cover"
                 style={{
-                  backgroundImage: imageCss(
-                    pickDifferentImage(INITIAL_STRIPE_IMAGES[i % INITIAL_STRIPE_IMAGES.length], i),
-                  ),
+                  backgroundImage: imageCss(INITIAL_TARGET_IMAGES[i % INITIAL_TARGET_IMAGES.length]),
                   backgroundPosition: STRIPE_POSITIONS[i % STRIPE_POSITIONS.length],
                   opacity: 0,
                   willChange: "opacity",
