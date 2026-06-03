@@ -16,8 +16,8 @@ const LIGHT_STRIPE_OPACITY = 0.26;
 const DARK_STRIPE_OPACITY = 0.37;
 
 // Slow crossfades keep the image changes atmospheric instead of flickery.
-const DUR_MIN = 12000;
-const DUR_MAX = 18000;
+const DUR_MIN = 10000;
+const DUR_MAX = 15000;
 
 // No rest - continuous smooth transitions
 const HOLD_MIN = 0;
