@@ -236,7 +236,7 @@ export function HeroSection() {
 
   return (
     <section className="relative overflow-hidden" aria-labelledby="hero-heading" style={{ position: 'relative' }}>
-      <div className="absolute inset-0 bg-secondary/50" />
+      <div className="absolute inset-0 bg-secondary/45" />
 
       {/* Continuously shifting destination stripes */}
       <div className="absolute inset-0" aria-hidden="true">
@@ -270,11 +270,11 @@ export function HeroSection() {
                   willChange: "opacity",
                 }}
               />
-              <div className="absolute inset-0 bg-secondary/55 dark:bg-background/60" />
+              <div className="absolute inset-0 bg-secondary/45 dark:bg-background/50" />
             </div>
           ))}
         </div>
-        <div className="absolute inset-0 bg-gradient-to-r from-background/55 via-background/25 to-background/45" />
+        <div className="absolute inset-0 bg-gradient-to-r from-background/45 via-background/20 to-background/35" />
       </div>
 
       <HeroScrollMark src="/brand/heart-plane.webm" />
