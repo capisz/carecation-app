@@ -6,6 +6,7 @@ const REQUIRED_SUPABASE_TABLES = [
   "profiles",
   "care_plans",
   "plan_items",
+  "providers",
   "quote_requests",
   "provider_applications",
   "testimonials",
@@ -95,21 +96,25 @@ async function checkAmadeus(env) {
 
 async function checkSupabase(env) {
   const hasUrl = hasValue(env.NEXT_PUBLIC_SUPABASE_URL);
-  const hasAnonKey = hasValue(env.NEXT_PUBLIC_SUPABASE_ANON_KEY);
-  const hasServiceRole = hasValue(env.SUPABASE_SERVICE_ROLE_KEY);
+  const publishableKey =
+    env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY ??
+    env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+  const secretKey = env.SUPABASE_SECRET_KEY ?? env.SUPABASE_SERVICE_ROLE_KEY;
+  const hasPublishableKey = hasValue(publishableKey);
+  const hasSecretKey = hasValue(secretKey);
 
   logCheck("Supabase URL present", hasUrl);
-  logCheck("Supabase anon key present", hasAnonKey);
-  logCheck("Supabase service role key present", hasServiceRole);
+  logCheck("Supabase publishable/anon key present", hasPublishableKey);
+  logCheck("Supabase secret/service role key present", hasSecretKey);
 
-  if (!hasUrl || !hasServiceRole) {
-    console.log("Supabase table checks skipped until URL and service role key are set.");
+  if (!hasUrl || !hasSecretKey) {
+    console.log("Supabase table checks skipped until URL and secret/service role key are set.");
     return;
   }
 
   const supabase = createClient(
     env.NEXT_PUBLIC_SUPABASE_URL,
-    env.SUPABASE_SERVICE_ROLE_KEY,
+    secretKey,
     {
       auth: {
         autoRefreshToken: false,

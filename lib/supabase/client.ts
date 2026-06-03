@@ -13,7 +13,7 @@ export function getSupabaseBrowserClient(): SupabaseClient | null {
   }
 
   if (!browserClient) {
-    browserClient = createBrowserClient(config.url, config.anonKey);
+    browserClient = createBrowserClient(config.url, config.publishableKey);
   }
 
   return browserClient;

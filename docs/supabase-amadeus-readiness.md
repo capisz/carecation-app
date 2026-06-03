@@ -4,19 +4,29 @@ Use this checklist before testing saved plans, login, quote requests, testimonia
 
 ## Supabase
 
-Create a Supabase project, then run:
+Create a Supabase project, then run all SQL files in order:
 
 ```text
 supabase/migrations/20260602000000_production_readiness.sql
+supabase/migrations/20260602010000_harden_public_write_policies.sql
 ```
 
 Add these values to `.env.local` and to Vercel:
 
 ```bash
 NEXT_PUBLIC_SUPABASE_URL=your_supabase_project_url
+NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY=your_supabase_publishable_key
+SUPABASE_SECRET_KEY=your_supabase_secret_key
+```
+
+Legacy aliases are also supported:
+
+```bash
 NEXT_PUBLIC_SUPABASE_ANON_KEY=your_supabase_anon_key
 SUPABASE_SERVICE_ROLE_KEY=your_service_role_key
 ```
+
+Only the `NEXT_PUBLIC_*` key is used in browser code. `SUPABASE_SECRET_KEY` and `SUPABASE_SERVICE_ROLE_KEY` are server-only.
 
 In Supabase Auth settings, add these redirect URLs:
 

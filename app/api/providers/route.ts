@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { jsonError } from "@/lib/api-response";
 import { getAuthenticatedUser } from "@/lib/supabase/server";
 
 export async function GET() {
@@ -14,10 +15,7 @@ export async function GET() {
     .order("name", { ascending: true });
 
   if (error) {
-    return NextResponse.json(
-      { error: "Failed to load providers.", details: error.message },
-      { status: 500 },
-    );
+    return jsonError("Failed to load providers.", 500, error.message);
   }
 
   const providers = (data ?? []).map((provider) => {

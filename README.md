@@ -72,19 +72,21 @@ AMADEUS_CLIENT_ID=your_amadeus_client_id
 AMADEUS_CLIENT_SECRET=your_amadeus_client_secret
 AMADEUS_ENV=test
 NEXT_PUBLIC_SUPABASE_URL=your_supabase_project_url
-NEXT_PUBLIC_SUPABASE_ANON_KEY=your_supabase_anon_key
-SUPABASE_SERVICE_ROLE_KEY=your_supabase_service_role_key
+NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY=your_supabase_publishable_key
+SUPABASE_SECRET_KEY=your_supabase_secret_key
 ```
 
 These are read server-side only in `lib/amadeus.ts`.
-Supabase public keys are used by the browser auth client; the service role key must stay server-side only.
+Supabase publishable keys are used by the browser auth client; the secret/service role key must stay server-side only.
+Legacy `NEXT_PUBLIC_SUPABASE_ANON_KEY` and `SUPABASE_SERVICE_ROLE_KEY` names are also supported.
 
 ### 4. Set up Supabase
 
-Run the SQL in:
+Run all SQL files in order:
 
 ```bash
 supabase/migrations/20260602000000_production_readiness.sql
+supabase/migrations/20260602010000_harden_public_write_policies.sql
 ```
 
 This creates profiles, saved plans, plan items, quote requests, provider applications, testimonials, affiliate clicks, audit events, and provider directory tables with row-level security.
@@ -190,7 +192,7 @@ Open [http://localhost:3021](http://localhost:3021).
 
 ## Deployment notes (Vercel)
 
-- Add `AMADEUS_CLIENT_ID`, `AMADEUS_CLIENT_SECRET`, `AMADEUS_ENV`, `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY`, and `SUPABASE_SERVICE_ROLE_KEY` in Vercel project environment variables.
+- Add `AMADEUS_CLIENT_ID`, `AMADEUS_CLIENT_SECRET`, `AMADEUS_ENV`, `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY`, and `SUPABASE_SECRET_KEY` in Vercel project environment variables. Legacy `NEXT_PUBLIC_SUPABASE_ANON_KEY` and `SUPABASE_SERVICE_ROLE_KEY` are also supported.
 - Use `AMADEUS_ENV=production` only after receiving Amadeus production API access.
 - Redeploy after env updates.
 - This repo uses `pnpm` lockfile; Vercel will install and build with pnpm.

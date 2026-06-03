@@ -5,12 +5,21 @@ export function jsonError(
   status: number,
   details?: unknown,
 ): NextResponse {
+  const body: {
+    error: string;
+    status: number;
+    details?: unknown;
+  } = {
+    error: message,
+    status,
+  };
+
+  if (details !== undefined && process.env.NODE_ENV !== "production") {
+    body.details = details;
+  }
+
   return NextResponse.json(
-    {
-      error: message,
-      details,
-      status,
-    },
+    body,
     { status },
   );
 }

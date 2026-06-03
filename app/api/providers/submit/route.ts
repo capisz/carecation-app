@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { jsonError } from "@/lib/api-response";
 import { getAuthenticatedUser } from "@/lib/supabase/server";
 
 /**
@@ -58,10 +59,7 @@ export async function POST(request: NextRequest) {
         .single();
 
       if (error) {
-        return NextResponse.json(
-          { error: "Failed to save provider application", details: error.message },
-          { status: 500 },
-        );
+        return jsonError("Failed to save provider application.", 500, error.message);
       }
 
       submissionId = data.id;
@@ -85,9 +83,6 @@ export async function POST(request: NextRequest) {
     );
   } catch (error) {
     console.error("[Provider Submission Error]", error);
-    return NextResponse.json(
-      { error: "Failed to process submission" },
-      { status: 500 }
-    );
+    return jsonError("Failed to process submission.", 500);
   }
 }
