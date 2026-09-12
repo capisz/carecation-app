@@ -218,6 +218,12 @@ async function safeJson(response: Response): Promise<unknown> {
   }
 }
 
+function networkErrorDetails(error: unknown): { cause: string } {
+  return {
+    cause: error instanceof Error ? error.message : "Unknown network error",
+  };
+}
+
 async function getAccessToken(forceRefresh = false): Promise<string> {
   if (!forceRefresh && tokenCache && tokenCache.expiresAtMs > Date.now()) {
     return tokenCache.accessToken;
@@ -229,14 +235,23 @@ async function getAccessToken(forceRefresh = false): Promise<string> {
     client_secret: getRequiredEnv("AMADEUS_CLIENT_SECRET"),
   });
 
-  const response = await fetch(`${getAmadeusBaseUrl()}/v1/security/oauth2/token`, {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/x-www-form-urlencoded",
-    },
-    body,
-    cache: "no-store",
-  });
+  let response: Response;
+  try {
+    response = await fetch(`${getAmadeusBaseUrl()}/v1/security/oauth2/token`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/x-www-form-urlencoded",
+      },
+      body,
+      cache: "no-store",
+    });
+  } catch (error) {
+    throw new AmadeusApiError(
+      "Unable to reach Amadeus while starting the flight search.",
+      503,
+      networkErrorDetails(error),
+    );
+  }
 
   if (!response.ok) {
     throw new AmadeusApiError(
@@ -273,12 +288,21 @@ async function amadeusGet<T>(
     }
   }
 
-  const response = await fetch(url.toString(), {
-    headers: {
-      Authorization: `Bearer ${accessToken}`,
-    },
-    cache: "no-store",
-  });
+  let response: Response;
+  try {
+    response = await fetch(url.toString(), {
+      headers: {
+        Authorization: `Bearer ${accessToken}`,
+      },
+      cache: "no-store",
+    });
+  } catch (error) {
+    throw new AmadeusApiError(
+      "Unable to reach Amadeus for this travel search.",
+      503,
+      networkErrorDetails(error),
+    );
+  }
 
   if (response.status === 401 && retryOnUnauthorized) {
     tokenCache = null;

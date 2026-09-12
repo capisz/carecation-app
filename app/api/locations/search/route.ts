@@ -56,16 +56,16 @@ export async function POST(request: Request) {
       count: results.length,
     });
   } catch (error) {
-    if (isAmadeusApiError(error)) {
-      const fallbackResults = localAirportFallback(keywordForFallback);
-      if (fallbackResults.length > 0) {
-        return NextResponse.json({
-          results: fallbackResults,
-          count: fallbackResults.length,
-          warning: "Using local airport matches because Amadeus location search failed.",
-        });
-      }
+    const fallbackResults = localAirportFallback(keywordForFallback);
+    if (fallbackResults.length > 0) {
+      return NextResponse.json({
+        results: fallbackResults,
+        count: fallbackResults.length,
+        warning: "Using local airport matches because live location search is temporarily unavailable.",
+      });
+    }
 
+    if (isAmadeusApiError(error)) {
       const status = error.status >= 400 && error.status < 500 ? error.status : 502;
       return jsonError(error.message, status, error.details);
     }

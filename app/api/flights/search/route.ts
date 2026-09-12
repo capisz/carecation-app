@@ -3,6 +3,8 @@ import {
   isAmadeusApiError,
   searchFlights,
   type FlightSearchInput,
+  type FlightItinerary,
+  type NormalizedFlightResult,
 } from "@/lib/amadeus";
 import { jsonError } from "@/lib/api-response";
 import { checkRateLimit, getClientIp } from "@/lib/rate-limit";
@@ -17,6 +19,81 @@ type FlightSearchBody = {
   returnDate?: string;
   adults?: number;
 };
+
+function airportTime(date: string, hour: number): string {
+  const value = new Date(`${date}T00:00:00Z`);
+  value.setUTCHours(hour);
+  return value.toISOString().slice(0, 19);
+}
+
+function addHours(dateTime: string, hours: number): string {
+  const value = new Date(`${dateTime}Z`);
+  value.setUTCHours(value.getUTCHours() + hours);
+  return value.toISOString().slice(0, 19);
+}
+
+function buildEstimatedFlights(input: FlightSearchInput): NormalizedFlightResult[] {
+  const routeSeed = [...`${input.origin}${input.destination}`].reduce(
+    (total, character) => total + character.charCodeAt(0),
+    0,
+  );
+  const airlines = [
+    { code: "DL", name: "Delta Air Lines" },
+    { code: "UA", name: "United Airlines" },
+    { code: "AA", name: "American Airlines" },
+  ];
+
+  return airlines.map((airline, index) => {
+    const outboundDepartHour = 8 + index * 3;
+    const durationHours = 10 + (routeSeed % 5);
+    const totalPrice = Math.round((520 + (routeSeed % 180) + index * 85) * input.adults);
+    const outboundDepartureAt = airportTime(input.departDate, outboundDepartHour);
+    const outbound = {
+      leg: "outbound" as const,
+      duration: `PT${durationHours}H`,
+      stops: 0,
+      segments: [{
+        carrierCode: airline.code,
+        carrierName: airline.name,
+        flightNumber: String(100 + (routeSeed % 800) + index),
+        departureIata: input.origin,
+        departureAt: outboundDepartureAt,
+        arrivalIata: input.destination,
+        arrivalAt: addHours(outboundDepartureAt, durationHours),
+        duration: `PT${durationHours}H`,
+      }],
+    };
+    const itineraries: FlightItinerary[] = [outbound];
+
+    if (input.returnDate) {
+      const returnDepartureAt = airportTime(input.returnDate, outboundDepartHour + 1);
+      itineraries.push({
+        leg: "return" as const,
+        duration: `PT${durationHours}H`,
+        stops: 0,
+        segments: [{
+          carrierCode: airline.code,
+          carrierName: airline.name,
+          flightNumber: String(900 + (routeSeed % 80) + index),
+          departureIata: input.destination,
+          departureAt: returnDepartureAt,
+          arrivalIata: input.origin,
+          arrivalAt: addHours(returnDepartureAt, durationHours),
+          duration: `PT${durationHours}H`,
+        }],
+      });
+    }
+
+    return {
+      id: `estimated-${input.origin}-${input.destination}-${index + 1}`,
+      totalPrice,
+      currency: "USD",
+      bookableSeats: null,
+      lastTicketingDate: null,
+      itineraries,
+    };
+  });
+}
 
 function validateFlightBody(body: FlightSearchBody): {
   ok: true;
@@ -64,6 +141,7 @@ function validateFlightBody(body: FlightSearchBody): {
 }
 
 export async function POST(request: Request) {
+  let validatedInput: FlightSearchInput | null = null;
   const rateLimit = checkRateLimit({
     key: `flights:${getClientIp(request)}`,
     limit: 30,
@@ -81,13 +159,24 @@ export async function POST(request: Request) {
       return jsonError(validated.message, 400);
     }
 
-    const results = await searchFlights(validated.input);
+    validatedInput = validated.input;
+    const results = await searchFlights(validatedInput);
 
     return NextResponse.json({
       results,
       count: results.length,
     });
   } catch (error) {
+    if (validatedInput) {
+      const fallbackResults = buildEstimatedFlights(validatedInput);
+      return NextResponse.json({
+        results: fallbackResults,
+        count: fallbackResults.length,
+        warning:
+          "Live flight offers are temporarily unavailable. Showing estimated options so you can continue planning.",
+      });
+    }
+
     if (isAmadeusApiError(error)) {
       const status = error.status >= 400 && error.status < 500 ? error.status : 502;
       return jsonError(error.message, status, error.details);

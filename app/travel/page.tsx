@@ -66,6 +66,7 @@ type LocationResult = {
 type SearchResponse<T> = {
   results: T[];
   count: number;
+  warning?: string;
   error?: string;
 };
 
@@ -337,6 +338,7 @@ function TravelPageContent() {
   });
   const [isSearching, setIsSearching] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [flightWarning, setFlightWarning] = useState<string | null>(null);
   const [hasSearched, setHasSearched] = useState(false);
   const [flights, setFlights] = useState<FlightResult[]>([]);
   const [visibleFlightsCount, setVisibleFlightsCount] = useState(6);
@@ -539,6 +541,7 @@ function TravelPageContent() {
     event.preventDefault();
     setHasSearched(true);
     setError(null);
+    setFlightWarning(null);
 
     if (!selectedOrigin || !selectedDestination) {
       setError("Choose an origin and destination airport from the dropdowns.");
@@ -570,12 +573,14 @@ function TravelPageContent() {
       );
 
       setFlights(flightsResponse.results);
+      setFlightWarning(flightsResponse.warning ?? null);
       setSelectedFlightId(flightsResponse.results[0]?.id ?? null);
       setVisibleFlightsCount(6);
     } catch (submitError) {
       const message =
         submitError instanceof Error ? submitError.message : "Failed to fetch flights.";
       setError(message);
+      setFlightWarning(null);
       setFlights([]);
       setSelectedFlightId(null);
     } finally {
@@ -894,6 +899,13 @@ function TravelPageContent() {
           <div className="mb-8 flex items-start gap-2 rounded-lg border border-destructive/30 bg-destructive/10 px-4 py-3 text-sm text-destructive">
             <AlertCircle className="mt-0.5 h-4 w-4 shrink-0" />
             <p>{error}</p>
+          </div>
+        )}
+
+        {flightWarning && (
+          <div className="mb-8 flex items-start gap-2 rounded-lg border border-amber-500/30 bg-amber-500/10 px-4 py-3 text-sm text-foreground">
+            <AlertCircle className="mt-0.5 h-4 w-4 shrink-0 text-amber-700 dark:text-amber-400" />
+            <p>{flightWarning}</p>
           </div>
         )}
 
