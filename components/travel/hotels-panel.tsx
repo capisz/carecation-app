@@ -9,7 +9,13 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Toaster } from "@/components/ui/toaster";
 import { useToast } from "@/hooks/use-toast";
-import { readItineraryPlan, upsertTravelSelections, type PlannedHotel } from "@/lib/itinerary-plan";
+import {
+  ITINERARY_PLAN_UPDATED_EVENT,
+  readItineraryPlan,
+  upsertTravelSelections,
+  type PlannedFlight,
+  type PlannedHotel,
+} from "@/lib/itinerary-plan";
 import { cn } from "@/lib/utils";
 import { AlertCircle, ArrowRight, CheckCircle2, Loader2 } from "lucide-react";
 
@@ -196,7 +202,7 @@ export function HotelsPanel({ embedded = false, onSwitchToFlights, onSelectionCh
   const [warning, setWarning] = useState<string | null>(null);
   const [hotels, setHotels] = useState<HotelResult[]>([]);
   const [selectedHotelId, setSelectedHotelId] = useState<string | null>(null);
-  const plannedFlight = readItineraryPlan().flight;
+  const [plannedFlight, setPlannedFlight] = useState<PlannedFlight | null>(null);
   const [isContinuingToCare, setIsContinuingToCare] = useState(false);
   const [imageAttemptById, setImageAttemptById] = useState<Record<string, number>>({});
   const [visibleHotelsCount, setVisibleHotelsCount] = useState(6);
@@ -204,6 +210,17 @@ export function HotelsPanel({ embedded = false, onSwitchToFlights, onSelectionCh
   const [conversionErrorByHotelId, setConversionErrorByHotelId] = useState<
     Record<string, string>
   >({});
+
+  useEffect(() => {
+    const syncPlan = () => setPlannedFlight(readItineraryPlan().flight ?? null);
+    syncPlan();
+    window.addEventListener("storage", syncPlan);
+    window.addEventListener(ITINERARY_PLAN_UPDATED_EVENT, syncPlan);
+    return () => {
+      window.removeEventListener("storage", syncPlan);
+      window.removeEventListener(ITINERARY_PLAN_UPDATED_EVENT, syncPlan);
+    };
+  }, []);
 
   useEffect(() => {
     if (!cityCode || !checkInDate || !checkOutDate) {
