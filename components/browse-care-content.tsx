@@ -2,28 +2,18 @@
 
 import Link from "next/link";
 import Image from "next/image";
-import { useEffect, useMemo, useState } from "react";
-import { useRouter, useSearchParams } from "next/navigation";
-import { Card, CardContent } from "@/components/ui/card";
+import { useEffect, useMemo, useRef, useState } from "react";
+import { useSearchParams } from "next/navigation";
+import * as DialogPrimitive from "@radix-ui/react-dialog";
 import { Input } from "@/components/ui/input";
-import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from "@/components/ui/popover";
-import { Toaster } from "@/components/ui/toaster";
-import { useToast } from "@/hooks/use-toast";
 import { upsertHealthcareEstimate } from "@/lib/itinerary-plan";
 import { cn } from "@/lib/utils";
 import {
   Search,
-  MapPin,
   Star,
-  Building2,
-  CheckCircle2,
-  ArrowLeft,
+  X,
+  ArrowRight,
 } from "lucide-react";
 
 type ClinicItem = {
@@ -129,13 +119,15 @@ function formatUsd(value: number): string {
 }
 
 export function BrowseCareContent() {
-  const router = useRouter();
   const searchParams = useSearchParams();
-  const { toast } = useToast();
   const [searchQuery, setSearchQuery] = useState("");
   const [expandedClinicId, setExpandedClinicId] = useState<string | null>(null);
+  const [specialty, setSpecialty] = useState("All");
   const [bookedClinicId, setBookedClinicId] = useState<string | null>(null);
   const [clinics, setClinics] = useState<ClinicItem[]>(CLINICS);
+  const [toastClinic, setToastClinic] = useState<string | null>(null);
+  const toastTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  useEffect(() => () => { if (toastTimer.current) clearTimeout(toastTimer.current); }, []);
 
   const procedureFilter = (searchParams.get("procedure") ?? "").trim();
   const preferredDestinationFilters = (searchParams.get("preferredDestinations") ?? "")
@@ -174,14 +166,10 @@ export function BrowseCareContent() {
           clinic.location.toLowerCase().includes(destination),
         );
 
-      return matchesQuery && matchesProcedure && matchesPreferredDestinations;
+      const matchesSpecialty = specialty === "All" || clinic.specialty.toLowerCase().includes(specialty.toLowerCase());
+      return matchesQuery && matchesProcedure && matchesPreferredDestinations && matchesSpecialty;
     });
-  }, [clinics, searchQuery, procedureFilter, preferredDestinationFilters]);
-
-  const bookedClinic = useMemo(
-    () => clinics.find((clinic) => clinic.id === bookedClinicId) ?? null,
-    [clinics, bookedClinicId],
-  );
+  }, [clinics, searchQuery, procedureFilter, preferredDestinationFilters, specialty]);
 
   const handleBookQuote = (clinic: ClinicItem) => {
     upsertHealthcareEstimate({
@@ -193,23 +181,13 @@ export function BrowseCareContent() {
       requestedAt: new Date().toISOString(),
     });
     setBookedClinicId(clinic.id);
-
-    toast({
-      title: "Quote booked and added",
-      description: `${clinic.name} estimate has been added to your itinerary.`,
-    });
+    setToastClinic(clinic.name);
+    if (toastTimer.current) clearTimeout(toastTimer.current);
+    toastTimer.current = setTimeout(() => setToastClinic(null), 4200);
   };
 
   return (
-    <div className="mx-auto max-w-7xl px-4 py-8 lg:px-8 lg:py-12">
-      <div className="mb-8 space-y-2 sm:space-y-3">
-        <h1 className="text-3xl font-bold text-foreground sm:text-4xl text-balance">
-          Browse Care
-        </h1>
-        <p className="mt-2 text-lg text-muted-foreground">
-          Select a clinic, review details, then book a quote to add a care estimate to your itinerary.
-        </p>
-      </div>
+    <div className="care-page">
 
       {(procedureFilter || preferredDestinationFilters.length > 0) && (
         <div className="mb-6 flex flex-wrap gap-2">
@@ -224,73 +202,26 @@ export function BrowseCareContent() {
         </div>
       )}
 
-      {bookedClinic && (
-        <Card className="mb-6 border-primary/25 bg-primary/10">
-          <CardContent className="flex flex-col gap-3 p-4 sm:flex-row sm:items-center sm:justify-between">
-            <div>
-              <p className="text-sm font-medium text-foreground">
-                Selected clinic: {bookedClinic.name}
-              </p>
-              <p className="text-sm text-muted-foreground">
-                Estimate added: {formatUsd(bookedClinic.estimateMinUSD)} -{" "}
-                {formatUsd(bookedClinic.estimateMaxUSD)}
-              </p>
-            </div>
-            <Button asChild>
-              <Link href="/itinerary">View itinerary</Link>
-            </Button>
-          </CardContent>
-        </Card>
-      )}
-
-      <div className="mb-10 space-y-5 rounded-xl border border-border bg-card p-4 sm:p-5">
-        <div className="flex flex-col gap-3 sm:flex-row sm:gap-4">
-          <div className="relative flex-1">
-            <Search
-              className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground"
-              aria-hidden="true"
-            />
+      <div className="mx-auto max-w-7xl">
+        <div className="mb-8 flex items-center gap-4 border-b-[1.5px] border-border transition-colors focus-within:border-primary">
+          <Search size={24} className="text-primary" aria-hidden="true" />
             <Input
               type="search"
               placeholder="Search clinics, procedures, or locations..."
               value={searchQuery}
               onChange={(event) => setSearchQuery(event.target.value)}
-              className="h-11 rounded-lg border-border bg-background pl-9"
+              className="h-16 flex-1 border-0 bg-transparent px-0 text-xl font-bold shadow-none focus-visible:ring-0 sm:text-2xl"
               aria-label="Search clinics"
             />
-          </div>
-          <Button
-            variant="outline"
-            className="h-11 rounded-lg border-border bg-card px-4 text-foreground hover:bg-muted sm:w-auto"
-          >
-            <Building2 className="mr-2 h-4 w-4" aria-hidden="true" />
-            Filters
-          </Button>
+          <span className="shrink-0 text-sm font-bold text-muted-foreground">{filteredClinics.length} verified</span>
         </div>
-
-        <div className="flex flex-wrap gap-2">
-          <Badge variant="secondary">All Specialties</Badge>
-          <Badge variant="outline">Dental</Badge>
-          <Badge variant="outline">Cosmetic</Badge>
-          <Badge variant="outline">Orthopedic</Badge>
-          <Badge variant="outline">Cardiology</Badge>
+        <div className="mb-12 flex flex-wrap gap-x-8 gap-y-3" role="tablist" aria-label="Clinic specialties">
+          {["All", "Dental", "Cosmetic", "Orthopedic", "Cardiology", "Eye Care", "Fertility"].map((item) => <button key={item} role="tab" aria-selected={specialty===item} onClick={() => setSpecialty(item)} className={`border-b-2 py-2 text-[17px] font-bold transition-colors ${specialty===item?"border-primary text-foreground":"border-transparent text-muted-foreground hover:text-foreground"}`}>{item}</button>)}
         </div>
-      </div>
-
-      <div className="mb-6">
-        <Button
-          type="button"
-          size="sm"
-          className="btn-primary-light"
-          onClick={() => router.back()}
-        >
-          <ArrowLeft className="mr-2 h-4 w-4" />
-          Back to hotels
-        </Button>
       </div>
 
       <div
-        className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3"
+        className="mx-auto grid max-w-7xl grid-cols-1 gap-x-9 gap-y-14 sm:grid-cols-2 lg:grid-cols-3"
         role="list"
         aria-label="Clinic results"
       >
@@ -299,101 +230,37 @@ export function BrowseCareContent() {
           const isBooked = bookedClinicId === clinic.id;
 
           return (
-            <Card
+            <article
               key={clinic.id}
               className={cn(
-                "overflow-hidden shadow-sm transition-all hover:shadow-lg",
+                "group cursor-pointer overflow-hidden transition-transform duration-500 hover:-translate-y-1",
                 isExpanded && "border-primary ring-1 ring-primary/50",
               )}
               role="listitem"
             >
-              <CardContent className="p-0">
-                <div className="relative h-44 overflow-hidden">
+                <div className="relative h-[300px] overflow-hidden rounded-[22px] shadow-[0_14px_34px_-22px_rgba(30,45,15,.5)]" onClick={() => setExpandedClinicId(clinic.id)} role="button" tabIndex={0} onKeyDown={(e) => {if(e.key==="Enter"||e.key===" "){e.preventDefault();setExpandedClinicId(clinic.id);}}}>
                   <Image
                     src={clinic.image}
                     alt={`${clinic.name} clinic`}
                     fill
-                    className="object-cover"
+                    className="object-cover transition-transform clinic-image-zoom group-hover:scale-105"
                   />
+                  {isBooked && <span className="absolute left-4 top-4 rounded-full bg-background px-4 py-2 text-sm font-bold">Added ✓</span>}
                 </div>
-
-                <div className="p-5">
-                  <div className="mb-3 flex items-start justify-between">
-                    <div className="flex-1">
-                      <h3 className="mb-1 text-lg font-semibold text-foreground">
-                        {clinic.name}
-                      </h3>
-                      <div className="flex items-center gap-1.5 text-sm text-muted-foreground">
-                        <MapPin className="h-4 w-4" aria-hidden="true" />
-                        <span>{clinic.location}</span>
-                      </div>
-                    </div>
-                    {clinic.verified && (
-                      <Badge variant="secondary" className="shrink-0">
-                        Verified
-                      </Badge>
-                    )}
+                <div className="pt-5">
+                  <div className="mb-2 flex items-start justify-between gap-3">
+                    <div><h3 className="text-[21px] font-extrabold leading-tight">{clinic.name}</h3><p className="mt-1 text-sm font-semibold text-muted-foreground">{clinic.location} · {clinic.specialty}</p></div>
+                    <div className="shrink-0 text-right"><p className="text-sm font-bold"><Star className="mr-1 inline h-4 w-4 fill-primary text-primary"/>{clinic.rating}</p><p className="mt-1 text-sm font-extrabold text-primary">from {formatUsd(clinic.estimateMinUSD)}</p></div>
                   </div>
-
-                  <div className="mb-4 flex items-center gap-2">
-                    <Badge variant="outline">{clinic.specialty}</Badge>
-                    <div className="flex items-center gap-1 text-sm font-medium">
-                      <Star className="h-4 w-4 fill-primary text-primary" aria-hidden="true" />
-                      <span>{clinic.rating}</span>
-                    </div>
-                  </div>
-
-                  <div className="space-y-2">
-                    <Popover
-                      open={isExpanded}
-                      onOpenChange={(open) =>
-                        setExpandedClinicId(open ? clinic.id : null)
-                      }
-                    >
-                      <PopoverTrigger asChild>
-                        <Button
-                          variant={isExpanded ? "default" : "outline"}
-                          className="w-full"
-                        >
-                          Details
-                        </Button>
-                      </PopoverTrigger>
-                      <PopoverContent
-                        align="start"
-                        className="w-[min(24rem,calc(100vw-2rem))]"
-                      >
-                        <p className="mb-2 text-sm text-muted-foreground">{clinic.details}</p>
-                        <p className="mb-3 text-sm font-medium text-foreground">
-                          Estimated care: {formatUsd(clinic.estimateMinUSD)} -{" "}
-                          {formatUsd(clinic.estimateMaxUSD)}
-                        </p>
-                        <Button
-                          className="w-full"
-                          onClick={() => {
-                            handleBookQuote(clinic);
-                            setExpandedClinicId(null);
-                          }}
-                          variant={isBooked ? "secondary" : "default"}
-                        >
-                          {isBooked ? (
-                            <>
-                              <CheckCircle2 className="mr-2 h-4 w-4" />
-                              Quote booked
-                            </>
-                          ) : (
-                            "Book quote & add to itinerary"
-                          )}
-                        </Button>
-                      </PopoverContent>
-                    </Popover>
-                  </div>
+                  {clinic.verified && <p className="sr-only">Verified clinic</p>}
+                  <button onClick={() => setExpandedClinicId(clinic.id)} className="mt-2 text-sm font-extrabold text-primary hover:underline">View details →</button>
                 </div>
-              </CardContent>
-            </Card>
+            </article>
           );
         })}
       </div>
-      <Toaster />
+      {expandedClinicId && (() => { const clinic=clinics.find((item)=>item.id===expandedClinicId); if(!clinic)return null; return <DialogPrimitive.Root open onOpenChange={(open)=>{if(!open)setExpandedClinicId(null);}}><DialogPrimitive.Portal><DialogPrimitive.Overlay className="fixed inset-0 z-[80] bg-foreground/35 backdrop-blur-sm"/><DialogPrimitive.Content aria-label={clinic.name} className="fixed inset-y-3 right-3 z-[81] w-[min(500px,calc(100vw-24px))] overflow-y-auto rounded-[28px] border-0 bg-background p-5 shadow-[0_30px_80px_-20px_rgba(25,35,15,.45)] outline-none animate-care-sheet sm:p-7"><DialogPrimitive.Title className="sr-only">{clinic.name}</DialogPrimitive.Title><button aria-label="Close clinic details" onClick={()=>setExpandedClinicId(null)} className="absolute right-6 top-6 z-10 grid h-11 w-11 place-items-center rounded-full bg-background text-foreground transition-transform hover:rotate-90"><X/></button><div className="relative h-[300px] overflow-hidden rounded-[22px]"><Image src={clinic.image} alt={`${clinic.name} clinic`} fill sizes="500px" className="object-cover"/></div><h2 className="mt-7 text-3xl font-extrabold tracking-tight">{clinic.name}</h2><p className="mt-2 font-semibold text-muted-foreground">{clinic.location} · {clinic.specialty} · ★ {clinic.rating}</p><p className="mt-6 text-base leading-relaxed">{clinic.details}</p><p className="mt-8 text-sm font-extrabold text-muted-foreground">Estimated care</p><p className="text-3xl font-extrabold">{formatUsd(clinic.estimateMinUSD)} – {formatUsd(clinic.estimateMaxUSD)}</p><button onClick={()=>{handleBookQuote(clinic);window.setTimeout(()=>setExpandedClinicId(null),650);}} className="care-pill mt-7 w-full">{bookedClinicId===clinic.id?"Added to itinerary ✓":"Add to itinerary"}</button><Link href={`/provider/${clinic.id}`} className="mt-5 inline-block font-bold text-primary underline underline-offset-4">Full profile</Link></DialogPrimitive.Content></DialogPrimitive.Portal></DialogPrimitive.Root>;})()}
+      {toastClinic && <div className="care-action-bar" role="status"><span>{toastClinic} added</span><Link href="/itinerary">View itinerary <ArrowRight size={15}/></Link></div>}
     </div>
   );
 }

@@ -2,9 +2,7 @@
 
 import React, { useEffect, useMemo, useRef, useState, useCallback } from "react";
 import Image from "next/image";
-import { Card, CardContent } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
-import { MapPin, ChevronLeft, ChevronRight } from "lucide-react";
+import { ChevronLeft, ChevronRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
 type Destination = {
@@ -167,6 +165,7 @@ export function DestinationsSection() {
   const lastTsRef = useRef<number>(0);
 
   const xRef = useRef<number>(0);
+  const speedRef = useRef<number>(BASE_SPEED_PX_PER_SEC);
   const loopWRef = useRef<number>(0);
   const stepRef = useRef<number>(0);
   const pausedRef = useRef<boolean>(false);
@@ -276,8 +275,9 @@ export function DestinationsSection() {
       const dt = (ts - lastTsRef.current) / 1000;
       lastTsRef.current = ts;
 
-      if (!pausedRef.current && !animatingRef.current && loopWRef.current > 0) {
-        xRef.current -= BASE_SPEED_PX_PER_SEC * dt;
+      speedRef.current += (((pausedRef.current || prefersReducedMotion) ? 0 : BASE_SPEED_PX_PER_SEC) - speedRef.current) * dt * 3;
+      if (!animatingRef.current && loopWRef.current > 0) {
+        xRef.current -= speedRef.current * dt;
         clampLoop();
         applyX();
       }
@@ -292,7 +292,7 @@ export function DestinationsSection() {
       rafRef.current = 0;
       lastTsRef.current = 0;
     };
-  }, [applyX, clampLoop]);
+  }, [applyX, clampLoop, prefersReducedMotion]);
 
   const handleTiltMove = useCallback((e: React.MouseEvent<HTMLDivElement>) => {
     const MAX = 8;
@@ -309,17 +309,14 @@ export function DestinationsSection() {
 
   return (
     <section
-      className="pt-8 pb-12 lg:pt-12 lg:pb-14 bg-secondary"
+      className="pt-16 pb-20 lg:pt-20 lg:pb-24"
       aria-labelledby="destinations-heading"
     >
-      <div className="mx-auto max-w-7xl px-4 lg:px-8">
-        <div className="text-center mb-8">
-          <h2 id="destinations-heading" className="text-3xl font-bold text-foreground sm:text-4xl text-balance">
-            Destinations we cover
+      <div className="mx-auto max-w-7xl px-6 lg:px-8">
+        <div className="mb-8">
+          <h2 id="destinations-heading" className="care-h2">
+            Where to go
           </h2>
-          <p className="mt-3 text-muted-foreground text-lg max-w-2xl mx-auto text-pretty">
-            Countries selected for their healthcare infrastructure, provider standards, and support for international patients.
-          </p>
         </div>
 
         <div className="relative">
@@ -356,10 +353,10 @@ export function DestinationsSection() {
             className="relative overflow-x-hidden overflow-y-visible py-10"
           >
             {/* Left fade overlay */}
-            <div className="pointer-events-none absolute inset-y-0 left-0 w-8 bg-gradient-to-r from-secondary to-transparent z-10" />
+            <div className="pointer-events-none absolute inset-y-0 left-0 w-8 bg-gradient-to-r from-background to-transparent z-10" />
 
             {/* Right fade overlay */}
-            <div className="pointer-events-none absolute inset-y-0 right-0 w-8 bg-gradient-to-l from-secondary to-transparent z-10" />
+            <div className="pointer-events-none absolute inset-y-0 right-0 w-8 bg-gradient-to-l from-background to-transparent z-10" />
 
             <div ref={trackRef} className="flex gap-6 will-change-transform" style={{ transform: "translate3d(0,0,0)" }} role="list">
               {doubled.map((dest, i) => {
@@ -369,7 +366,7 @@ export function DestinationsSection() {
                   <div
                     key={i}
                     role="listitem"
-                    className="inline-block flex-shrink-0 align-top w-[300px] md:w-[340px] lg:w-[380px] px-2"
+                    className="group inline-block flex-shrink-0 align-top w-[300px]"
                     style={{ perspective: 600 }}
                     onMouseEnter={() => {
                       setHovered(i);
@@ -382,16 +379,8 @@ export function DestinationsSection() {
                     }}
                     onMouseMove={isHovered ? handleTiltMove : undefined}
                   >
-                    <Card
-                      className={[
-                        "relative overflow-hidden rounded-xl",
-                        "bg-card dark:bg-card",
-                        "border-0 outline-none ring-0",
-                        "transition-all duration-300 ease-out",
-                        isHovered
-                          ? "shadow-[0_12px_26px_rgba(0,0,0,0.14),0_18px_34px_rgba(0,0,0,0.10),0_0_30px_hsl(var(--primary)/0.22)]"
-                          : "shadow-[0_6px_16px_rgba(0,0,0,0.08)] dark:shadow-[0_8px_20px_rgba(0,0,0,0.24)]",
-                      ].join(" ")}
+                    <div
+                      className="relative h-[400px] overflow-hidden rounded-[22px] shadow-[0_14px_34px_-22px_rgba(30,45,15,.5)] transition-transform duration-500"
                       style={
                         isHovered && !prefersReducedMotion
                           ? {
@@ -403,61 +392,10 @@ export function DestinationsSection() {
                             }
                       }
                     >
-                      {/* Bloom / glow overlay */}
-                      <div
-                        className="pointer-events-none absolute inset-0 rounded-xl transition-opacity duration-300"
-                        style={{
-                          background: "radial-gradient(ellipse at 50% 40%, hsl(var(--primary) / 0.16) 0%, transparent 70%)",
-                          opacity: isHovered ? 1 : 0,
-                        }}
-                      />
-
-                      <CardContent className="p-0 flex flex-col relative z-10">
-                        <div className="relative h-40 overflow-hidden rounded-t-xl">
-                          <Image
-                            src={dest.image}
-                            alt={`${dest.country} destination`}
-                            fill
-                            className="object-cover"
-                          />
-                        </div>
-
-                        <div className="p-5 flex flex-col gap-3">
-
-                        <div className="flex-1 flex flex-col gap-3">
-                          <div>
-                            <h3 className="text-xl font-bold text-foreground">
-                              {dest.country}
-                              <span
-                                className="block h-[2px] bg-primary mt-1 transition-all duration-300 ease-out"
-                                style={{ width: isHovered ? "100%" : "0%" }}
-                              />
-                            </h3>
-                            <div className="flex items-center gap-1 text-sm text-muted-foreground mt-1">
-                              <MapPin className="h-4 w-4" aria-hidden="true" />
-                              <span>{dest.cities.join(", ")}</span>
-                            </div>
-                          </div>
-
-                          <div className="flex flex-wrap gap-1.5">
-                            {dest.specialties.map((spec) => (
-                              <Badge key={spec} variant="secondary" className="text-xs">
-                                {spec}
-                              </Badge>
-                            ))}
-                          </div>
-
-                          {dest.note && (
-                            <p className="text-sm text-muted-foreground italic">{dest.note}</p>
-                          )}
-
-                          <p className="text-sm text-muted-foreground leading-relaxed line-clamp-4">
-                            {dest.description}
-                          </p>
-                        </div>
-                        </div>
-                      </CardContent>
-                    </Card>
+                      <Image src={dest.image} alt={`${dest.country} destination`} fill className="object-cover clinic-image-zoom group-hover:scale-105" />
+                      <div className="absolute inset-0 bg-gradient-to-b from-transparent via-transparent to-[rgba(20,30,10,.78)]" />
+                      <div className="absolute inset-x-0 bottom-0 p-6 text-white"><h3 className="text-[26px] font-extrabold">{dest.country}</h3><p className="mt-1 text-sm font-semibold text-white/90">{dest.specialties.slice(0,2).join(" · ")}</p></div>
+                    </div>
                   </div>
                 );
               })}

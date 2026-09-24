@@ -133,7 +133,7 @@ export default function ProvidersPage() {
 
   return (
     <AppShell>
-      <div className="mx-auto max-w-3xl px-4 py-12 lg:py-16">
+      <div className="care-page provider-application mx-auto max-w-3xl">
         <div className="text-center mb-10">
           <h1 className="text-3xl font-bold text-foreground sm:text-4xl">Join Carecation</h1>
           <p className="mt-3 text-lg text-muted-foreground max-w-2xl mx-auto">

@@ -1,15 +1,15 @@
 "use client";
 
-import { use } from "react";
+import { use, useEffect, useState } from "react";
 import { notFound } from "next/navigation";
 import { usePageReady } from "@/hooks/use-page-ready";
 import Link from "next/link";
+import Image from "next/image";
 import { AppShell } from "@/components/app-shell";
 import { getProviderById, estimateTotalTripCost, TRAVEL_COST_PLACEHOLDER } from "@/lib/data/providers-repo";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Separator } from "@/components/ui/separator";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import {
@@ -54,6 +54,8 @@ export default function ProviderDetailPage({
 }) {
   usePageReady();
   const { id } = use(params);
+  const [showActions, setShowActions] = useState(false);
+  useEffect(() => { const onScroll = () => setShowActions(window.scrollY > 420); onScroll(); window.addEventListener("scroll", onScroll, {passive:true}); return () => window.removeEventListener("scroll", onScroll); }, []);
   const provider = getProviderById(id);
 
   if (!provider) {
@@ -62,18 +64,20 @@ export default function ProviderDetailPage({
 
   const tripCost = estimateTotalTripCost(provider);
   const stayDays = provider.recoveryDays + 4;
+  const procedureText = provider.procedures.join(" ").toLowerCase();
+  const providerImage = procedureText.includes("fertility") ? "/Clinics/Barcelona-Fertility-Clinic.jpg" : procedureText.includes("eye") ? "/Clinics/Seoul-Eye-Surgery-Center.jpg" : procedureText.includes("orthop") ? "/Clinics/Prague-Orthopedic-Hospital.jpg" : procedureText.includes("cardio") || procedureText.includes("heart") ? "/Clinics/Mexico-City-Heart-Institute.jpg" : procedureText.includes("cosmetic") || procedureText.includes("aesthetic") ? "/Clinics/Istanbul-Aesthetic-Clinic.jpg" : "/Clinics/Bangkok-Smile-Dental-Center.jpg";
 
   return (
     <AppShell>
-      <div className="mx-auto max-w-5xl px-4 py-8 lg:px-8 lg:py-12">
+      <div className="care-page mx-auto max-w-6xl">
         <Button variant="ghost" asChild className="mb-6 text-muted-foreground">
-          <Link href="/results">
+          <Link href="/clinics">
             <ArrowLeft className="mr-2 h-4 w-4" aria-hidden="true" />
-            Back to results
+            Clinics
           </Link>
         </Button>
 
-        <div className="flex flex-col lg:flex-row gap-8">
+        <div className="provider-layout flex flex-col lg:flex-row gap-8">
           <div className="flex-1">
             {/* Header */}
             <div className="flex items-start gap-4 mb-6">
@@ -81,7 +85,7 @@ export default function ProviderDetailPage({
                 <ShieldCheck className="h-8 w-8 text-primary" aria-hidden="true" />
               </div>
               <div>
-                <h1 className="text-2xl font-bold text-foreground sm:text-3xl text-balance">
+                <h1 className="care-h1 text-4xl sm:text-5xl">
                   {provider.name}
                 </h1>
                 <div className="flex items-center gap-3 mt-2 flex-wrap">
@@ -126,15 +130,9 @@ export default function ProviderDetailPage({
               </div>
             </div>
 
-            <Tabs defaultValue="overview" className="w-full">
-              <TabsList className="w-full justify-start" aria-label="Provider information tabs">
-                <TabsTrigger value="overview">Overview</TabsTrigger>
-                <TabsTrigger value="package">Package & cost</TabsTrigger>
-                <TabsTrigger value="reviews">Reviews</TabsTrigger>
-                <TabsTrigger value="logistics">Logistics</TabsTrigger>
-              </TabsList>
-
-              <TabsContent value="overview" className="mt-6 space-y-6">
+            <div className="relative mb-12 aspect-[1.8] overflow-hidden rounded-[28px] shadow-[0_30px_60px_-30px_rgba(30,45,15,.45)]"><Image src={providerImage} alt={`${provider.name} facility`} fill priority sizes="(max-width: 1024px) 100vw, 900px" className="object-cover"/></div>
+            <div className="space-y-14">
+              <section id="overview" className="mt-6 space-y-6">
                 <p className="text-muted-foreground leading-relaxed">
                   {provider.description}
                 </p>
@@ -164,9 +162,9 @@ export default function ProviderDetailPage({
                     decisions.
                   </p>
                 </div>
-              </TabsContent>
+              </section>
 
-              <TabsContent value="package" className="mt-6 space-y-6">
+              <section id="cost" className="mt-6 space-y-6 border-t border-border pt-10">
                 <div>
                   <h3 className="font-semibold text-foreground mb-2">
                     Procedure cost range
@@ -240,12 +238,11 @@ export default function ProviderDetailPage({
                     ))}
                   </ul>
                 </div>
-              </TabsContent>
+              </section>
 
-              <TabsContent value="reviews" className="mt-6 space-y-4">
+              <section id="reviews" className="mt-6 space-y-4 border-t border-border pt-10">
                 {mockReviews.map((review, i) => (
-                  <Card key={i}>
-                    <CardContent className="p-5">
+                  <div key={i} className="grid gap-4 border-b border-border py-6 sm:grid-cols-[1fr_180px]">
                       <div className="flex items-center gap-3 mb-3">
                         <div className="h-9 w-9 rounded-full bg-muted flex items-center justify-center">
                           <User className="h-4 w-4 text-muted-foreground" aria-hidden="true" />
@@ -274,17 +271,16 @@ export default function ProviderDetailPage({
                       <p className="text-sm text-muted-foreground leading-relaxed">
                         {review.text}
                       </p>
-                    </CardContent>
-                  </Card>
+                  </div>
                 ))}
                 <p className="text-xs text-muted-foreground text-center pt-2">
                   Reviews shown are for demonstration purposes. In a live
                   application, reviews would be verified and sourced from real
                   patients.
                 </p>
-              </TabsContent>
+              </section>
 
-              <TabsContent value="logistics" className="mt-6 space-y-6">
+              <section id="logistics" className="mt-6 space-y-6 border-t border-border pt-10">
                 <div className="grid gap-4 sm:grid-cols-2">
                   <Card>
                     <CardContent className="p-5 flex items-center gap-4">
@@ -344,8 +340,8 @@ export default function ProviderDetailPage({
                     destination.
                   </p>
                 </div>
-              </TabsContent>
-            </Tabs>
+              </section>
+            </div>
           </div>
 
           {/* Sidebar */}
@@ -397,6 +393,7 @@ export default function ProviderDetailPage({
             </div>
           </aside>
         </div>
+        {showActions && <div className="provider-action-bar" role="region" aria-label="Provider actions"><div><span className="text-sm font-bold">Est. trip</span><strong>${tripCost.min.toLocaleString()} – ${tripCost.max.toLocaleString()}</strong></div><Link href={`/request?providerId=${provider.id}`} className="provider-action-secondary">Request a quote</Link><Link href={`/itinerary?providerId=${provider.id}`} className="provider-action-primary">Build itinerary</Link></div>}
       </div>
     </AppShell>
   );

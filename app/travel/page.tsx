@@ -18,6 +18,7 @@ import { findTravelLocation, type TravelLocationProfile } from "@/lib/travel-loc
 import { cn } from "@/lib/utils";
 import {
   AlertCircle,
+  ArrowRight,
   Calendar,
   CheckCircle2,
   Clock,
@@ -66,7 +67,6 @@ type LocationResult = {
 type SearchResponse<T> = {
   results: T[];
   count: number;
-  warning?: string;
   error?: string;
 };
 
@@ -113,6 +113,12 @@ function formatDateTime(value: string): string {
     hour: "numeric",
     minute: "2-digit",
   }).format(date);
+}
+
+function formatSearchDate(value: string): string {
+  const date = new Date(`${value}T00:00:00`);
+  if (!value || Number.isNaN(date.getTime())) return "your dates";
+  return new Intl.DateTimeFormat(undefined, { month: "short", day: "numeric" }).format(date);
 }
 
 function normalizeCurrencyCode(currency: string): string {
@@ -338,7 +344,6 @@ function TravelPageContent() {
   });
   const [isSearching, setIsSearching] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [flightWarning, setFlightWarning] = useState<string | null>(null);
   const [hasSearched, setHasSearched] = useState(false);
   const [flights, setFlights] = useState<FlightResult[]>([]);
   const [visibleFlightsCount, setVisibleFlightsCount] = useState(6);
@@ -541,7 +546,6 @@ function TravelPageContent() {
     event.preventDefault();
     setHasSearched(true);
     setError(null);
-    setFlightWarning(null);
 
     if (!selectedOrigin || !selectedDestination) {
       setError("Choose an origin and destination airport from the dropdowns.");
@@ -573,14 +577,12 @@ function TravelPageContent() {
       );
 
       setFlights(flightsResponse.results);
-      setFlightWarning(flightsResponse.warning ?? null);
       setSelectedFlightId(flightsResponse.results[0]?.id ?? null);
       setVisibleFlightsCount(6);
     } catch (submitError) {
       const message =
         submitError instanceof Error ? submitError.message : "Failed to fetch flights.";
       setError(message);
-      setFlightWarning(null);
       setFlights([]);
       setSelectedFlightId(null);
     } finally {
@@ -639,21 +641,20 @@ function TravelPageContent() {
   };
 
   const canSearch = Boolean(selectedOrigin && selectedDestination) && !isSearching;
+  const searchDateLabel = form.returnDate ? `${formatSearchDate(form.departDate)} – ${formatSearchDate(form.returnDate)}` : formatSearchDate(form.departDate);
+  const selectedFlightPriceLabel = selectedFlight ? typeof usdByFlightId[selectedFlight.id] === "number" ? formatPrice(usdByFlightId[selectedFlight.id], "USD") : conversionErrorByFlightId[selectedFlight.id] ?? "Converting…" : "";
 
   return (
     <AppShell>
-      <div className="mx-auto max-w-7xl px-4 py-8 lg:px-8 lg:py-12">
+      <div className="care-page travel-page">
         <div className="mb-8 space-y-2 sm:space-y-3">
-          <h1 className="text-balance text-3xl font-bold text-foreground sm:text-4xl">
-            Browse Travel
+          <h1 className="travel-sentence text-balance">
+            Fly from <span>{form.originQuery || "New York"}</span> to <span>{form.destinationQuery || "Bangkok"}</span>, <span>{searchDateLabel}</span>
           </h1>
-          <p className="text-lg text-muted-foreground">
-            Search flights by city name, then choose a hotel on the next step.
-          </p>
         </div>
 
         {recommendedDestination && (
-          <Card className="mb-6 border-primary/20">
+          <Card className="travel-note mb-6 border-primary/20">
             <CardContent className="p-4">
               <p className="text-sm text-muted-foreground">
                 Recommended destination:{" "}
@@ -672,10 +673,10 @@ function TravelPageContent() {
         )}
 
         {preferredProfiles.length > 0 && (
-          <Card className="mb-6">
+          <Card className="travel-note mb-6">
             <CardContent className="p-4">
-              <p className="mb-3 text-sm text-muted-foreground">
-                Preferred locations from your care plan:
+              <p className="mb-3 text-sm font-bold text-muted-foreground">
+                From your plan
               </p>
               <div className="flex flex-wrap gap-2">
                 {preferredProfiles.map((profile) => (
@@ -698,7 +699,7 @@ function TravelPageContent() {
           </Card>
         )}
 
-        <Card className="mb-8">
+        <Card className="mb-8 travel-search-panel">
           <CardContent className="p-6">
             <form onSubmit={handleSubmit} className="space-y-5">
               <div className="grid gap-4 md:grid-cols-2">
@@ -739,7 +740,7 @@ function TravelPageContent() {
                     <p className="text-xs text-destructive">{originLookup.error}</p>
                   )}
                   {originProfile && (
-                    <p className="text-xs text-muted-foreground">
+                    <p className="travel-context-hint text-xs text-muted-foreground">
                       Origin guide: {originProfile.recommendedCity} (
                       {originProfile.recommendedCityCode}) • Airports:{" "}
                       {originProfile.airports
@@ -786,14 +787,14 @@ function TravelPageContent() {
                       ))
                     )}
                   </select>
-                  <p className="text-xs text-muted-foreground">
+                  <p className="travel-context-hint text-xs text-muted-foreground">
                     Hotel search city code:{" "}
                     <span className="font-medium text-foreground">
                       {selectedDestination?.cityCode ?? "—"}
                     </span>
                   </p>
                   {destinationProfile && (
-                    <p className="text-xs text-muted-foreground">
+                    <p className="travel-context-hint text-xs text-muted-foreground">
                       Destination guide: {destinationProfile.recommendedCity} (
                       {destinationProfile.recommendedCityCode}) • Airports:{" "}
                       {destinationProfile.airports
@@ -874,26 +875,24 @@ function TravelPageContent() {
               </div>
 
               <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
-                <Button type="submit" className="w-full sm:w-auto" disabled={!canSearch}>
+                <Button type="submit" aria-label="Search flights" className="travel-search-submit h-14 w-14 shrink-0 rounded-full p-0" disabled={!canSearch}>
                   {isSearching ? (
-                    <>
-                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                      Searching flights...
-                    </>
+                    <Loader2 className="h-5 w-5 animate-spin" />
                   ) : (
                     <>
-                      <Search className="mr-2 h-4 w-4" />
-                      Search flights
+                      <ArrowRight className="h-5 w-5" />
                     </>
                   )}
                 </Button>
-                <p className="text-sm text-muted-foreground">
-                  Initial load shows 6 flights. Use Load more for additional options.
-                </p>
               </div>
             </form>
           </CardContent>
         </Card>
+
+        <div className="travel-tabs-row mb-8 flex flex-wrap items-center justify-between gap-4">
+          <div className="care-tabs" aria-label="Travel type"><Link href="/travel" aria-current="page">Flights</Link><Link href="/travel/hotels">Hotels</Link></div>
+          <span className="travel-results-status">{isSearching ? "Searching…" : hasSearched ? `${flights.length} flights · ${selectedOrigin?.iataCode ?? "—"} → ${selectedDestination?.iataCode ?? "—"}` : "Choose a route to get started"}</span>
+        </div>
 
         {error && (
           <div className="mb-8 flex items-start gap-2 rounded-lg border border-destructive/30 bg-destructive/10 px-4 py-3 text-sm text-destructive">
@@ -902,19 +901,13 @@ function TravelPageContent() {
           </div>
         )}
 
-        {flightWarning && (
-          <div className="mb-8 flex items-start gap-2 rounded-lg border border-amber-500/30 bg-amber-500/10 px-4 py-3 text-sm text-foreground">
-            <AlertCircle className="mt-0.5 h-4 w-4 shrink-0 text-amber-700 dark:text-amber-400" />
-            <p>{flightWarning}</p>
-          </div>
-        )}
-
+        {isSearching && <div className="travel-loading-line" aria-label="Loading flights" />}
         <section aria-labelledby="flight-results-heading">
           <div className="mb-4 flex items-center justify-between gap-3">
             <h2 id="flight-results-heading" className="text-2xl font-semibold text-foreground">
               Flight results
             </h2>
-            <Badge variant="secondary">{flights.length} found</Badge>
+            <Badge className="travel-count" variant="secondary">{flights.length} found</Badge>
           </div>
 
           {hasSearched && (
@@ -934,7 +927,7 @@ function TravelPageContent() {
                     Saving flight...
                   </>
                 ) : (
-                  "Next: Choose Hotels"
+                  "Choose a hotel"
                 )}
               </Button>
             </div>
@@ -954,8 +947,8 @@ function TravelPageContent() {
 
           {!isSearching && flights.length > 0 && (
             <>
-              <div className="grid gap-3 lg:grid-cols-2 xl:grid-cols-3">
-                {visibleFlights.map((flight) => {
+              <div className="flight-results-list flex flex-col">
+                {visibleFlights.map((flight, index) => {
                   const outbound =
                     flight.itineraries.find((itinerary) => itinerary.leg === "outbound") ??
                     flight.itineraries[0];
@@ -993,13 +986,15 @@ function TravelPageContent() {
                   return (
                     <Card
                       key={flight.id}
+                      data-selected={isSelected ? "true" : undefined}
+                      style={{ animationDelay: `${index * 70}ms` }}
                       className={cn(
-                        "shadow-sm transition-all hover:shadow-md",
+                        "flight-result-row shadow-sm transition-all hover:shadow-md",
                         isSelected && "border-primary ring-1 ring-primary/50",
                       )}
                     >
-                      <CardContent className="p-4">
-                        <div className="mb-2 flex items-start justify-between gap-2">
+                      <CardContent className="flight-result-content p-4">
+                        <div className="flight-result-summary mb-2 flex items-start justify-between gap-2">
                           <div>
                             <p className="text-xs uppercase tracking-wide text-muted-foreground">
                               Total in USD
@@ -1007,12 +1002,6 @@ function TravelPageContent() {
                             <p className="text-xl font-semibold text-foreground">
                               {usdPrimaryText}
                             </p>
-                            {normalizedCurrency !== "USD" && (
-                              <p className="mt-0.5 text-[11px] text-muted-foreground">
-                                Original: {formatPrice(flight.totalPrice, flight.currency)}
-                                {conversionError ? " • USD conversion unavailable" : ""}
-                              </p>
-                            )}
                           </div>
                           <div className="flex items-center gap-2">
                             <div className="flex h-8 w-16 items-center justify-center overflow-hidden rounded-md border border-border/80 bg-white/90 px-1 shadow-sm dark:border-border/70 dark:bg-secondary dark:shadow-[0_1px_4px_rgba(0,0,0,0.35)]">
@@ -1045,8 +1034,9 @@ function TravelPageContent() {
                           </div>
                         </div>
 
+                        <div className="flight-itinerary-details">
                         {outboundFirst && outboundLast && (
-                          <div className="mb-2 rounded-md border border-border bg-background p-2.5">
+                          <div className="flight-leg-detail mb-2 rounded-md border border-border bg-background p-2.5">
                             <p className="mb-0.5 text-sm font-medium text-foreground">
                               Outbound: {outboundFirst.departureIata} → {outboundLast.arrivalIata}
                             </p>
@@ -1072,7 +1062,7 @@ function TravelPageContent() {
                         )}
 
                         {inboundFirst && inboundLast && (
-                          <div className="mb-2 rounded-md border border-border bg-background p-2.5">
+                          <div className="flight-leg-detail mb-2 rounded-md border border-border bg-background p-2.5">
                             <p className="mb-0.5 text-sm font-medium text-foreground">
                               Return: {inboundFirst.departureIata} → {inboundLast.arrivalIata}
                             </p>
@@ -1097,7 +1087,7 @@ function TravelPageContent() {
                           </div>
                         )}
 
-                        <div className="mb-3 flex flex-wrap gap-1.5 text-[11px] text-muted-foreground">
+                        <div className="flight-meta mb-3 flex flex-wrap gap-1.5 text-[11px] text-muted-foreground">
                           {flight.bookableSeats !== null && (
                             <span className="inline-flex items-center gap-1 rounded-md bg-muted px-2 py-0.5">
                               <Calendar className="h-3 w-3" />
@@ -1111,11 +1101,12 @@ function TravelPageContent() {
                             </span>
                           )}
                         </div>
+                        </div>
 
                         <Button
                           type="button"
                           variant={isSelected ? "default" : "outline"}
-                          className="h-9 w-full"
+                          className="flight-select-button h-9 w-full"
                           onClick={() => setSelectedFlightId(flight.id)}
                         >
                           {isSelected ? (
@@ -1161,13 +1152,14 @@ function TravelPageContent() {
                       Saving flight...
                     </>
                   ) : (
-                    "Next: Choose Hotels"
+                    "Choose a hotel"
                   )}
                 </Button>
               </div>
             </>
           )}
         </section>
+      {selectedFlight && <div className="care-action-bar" role="region" aria-label="Selected flight"><span>{selectedFlight.itineraries[0]?.segments[0]?.carrierName ?? "Flight"} · {selectedFlightPriceLabel}</span><button onClick={handleContinueToHotels} className="care-action-cta" disabled={!hotelsHref||isContinuingToHotels}>Choose a hotel <ArrowRight size={15}/></button></div>}
       </div>
       <Toaster />
     </AppShell>

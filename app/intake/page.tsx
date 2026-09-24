@@ -1,320 +1,65 @@
 "use client";
 
-import { useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
-import { usePageReady } from "@/hooks/use-page-ready";
+import Image from "next/image";
+import Link from "next/link";
+import { ArrowLeft, ArrowRight, Check, Plane, X } from "lucide-react";
 import { AppShell } from "@/components/app-shell";
-import { Stepper } from "@/components/stepper";
-import { Button } from "@/components/ui/button";
-import { Card, CardContent } from "@/components/ui/card";
-import { Label } from "@/components/ui/label";
-import { Checkbox } from "@/components/ui/checkbox";
-import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import { ArrowLeft, ArrowRight } from "lucide-react";
-import {
-  PROCEDURE_CATEGORIES,
-  INTAKE_DESTINATIONS,
-  TRAVEL_MONTHS,
-  BUDGET_RANGES,
-} from "@/lib/data/providers-repo";
+import { usePageReady } from "@/hooks/use-page-ready";
+import { PROCEDURE_CATEGORIES, INTAKE_DESTINATIONS, TRAVEL_MONTHS, BUDGET_RANGES } from "@/lib/mock/providers";
 import { upsertTravelRecommendation } from "@/lib/itinerary-plan";
 import { findTravelLocation } from "@/lib/travel-locations";
+import { useOverlay } from "@/components/overlay/overlay-provider";
+import { ThemeToggle } from "@/components/theme-toggle";
 
-const STEPS = ["Procedure", "Destinations", "Budget", "Travel"];
-
-type IntakeForm = {
-  procedure: string;
-  preferredDestinations: string[];
-  month: string;
-  budgetLabel: string;
-};
-
-function buildTravelSummary(form: IntakeForm): {
-  destination: string;
-  cityCode: string;
-  airportCodes: string[];
-  summary: string;
-} {
-  const profile =
-    findTravelLocation(form.preferredDestinations[0]) ??
-    findTravelLocation("Thailand");
-  const destination = profile?.recommendedCity ?? "Bangkok";
-  const cityCode = profile?.recommendedCityCode ?? "BKK";
-  const airportCodes = (profile?.airports ?? []).map((airport) => airport.iata).slice(0, 3);
-  const budget = form.budgetLabel || "flexible budget";
-  const procedure = form.procedure || "care";
-  const month = form.month || "your preferred month";
-  const selectedDestinationsText =
-    form.preferredDestinations.length > 0
-      ? ` Preferred locations: ${form.preferredDestinations.join(", ")}.`
-      : "";
-
-  const airportText =
-    airportCodes.length > 0 ? ` Typical airports: ${airportCodes.join(", ")}.` : "";
-
-  return {
-    destination,
-    cityCode,
-    airportCodes,
-    summary: `Recommended start: ${destination} (${cityCode}). Based on ${procedure} in ${month} with ${budget}, begin by comparing flights first, then add a hotel and care estimate to your itinerary.${selectedDestinationsText}${airportText}`,
-  };
-}
+const photos: Record<string,string> = { Thailand:"thailand", Mexico:"mexico", Turkey:"turkey", Spain:"spain", Guatemala:"guatemala", "South Korea":"south-korea", Vietnam:"vietnam", Cuba:"cuba", Taiwan:"taiwan", Sweden:"sweden", Norway:"norway", Singapore:"singapore", Ireland:"ireland", Japan:"japan", Netherlands:"netherlands" };
 
 export default function IntakePage() {
   usePageReady();
   const router = useRouter();
+  const { runNavOverlay } = useOverlay();
   const [step, setStep] = useState(0);
-  const contentRef = useRef<HTMLDivElement | null>(null);
-  const [form, setForm] = useState<IntakeForm>({
-    procedure: "",
-    preferredDestinations: [],
-    month: "",
-    budgetLabel: "",
-  });
-
-  const recommendation = useMemo(() => buildTravelSummary(form), [form]);
-
-  const update = (key: keyof IntakeForm, value: string) => {
-    setForm((prev) => ({ ...prev, [key]: value }));
+  const [procedure, setProcedure] = useState("");
+  const [destinations, setDestinations] = useState<string[]>([]);
+  const [month, setMonth] = useState("");
+  const [budget, setBudget] = useState("");
+  const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const profile = useMemo(() => findTravelLocation(destinations[0] || "Thailand"), [destinations]);
+  const city = profile?.recommendedCity ?? "Bangkok";
+  const cityCode = profile?.recommendedCityCode ?? "BKK";
+  const airports = (profile?.airports ?? []).map((item) => item.iata).slice(0,3);
+  useEffect(() => () => { if (timer.current) clearTimeout(timer.current); }, []);
+  const advance = () => { if (timer.current) clearTimeout(timer.current); setStep((current) => Math.min(4,current+1)); };
+  const chooseAuto = (fn: () => void) => { fn(); if (timer.current) clearTimeout(timer.current); timer.current = setTimeout(() => setStep((current) => Math.min(4,current+1)),420); };
+  const toggle = (value:string) => setDestinations((current) => current.includes(value) ? current.filter((item) => item !== value) : [...current,value]);
+  const findFlights = () => {
+    const summary = `Recommended start: ${city} (${cityCode}). Based on ${procedure} in ${month} with ${budget}, compare flights first, then add a hotel and care estimate.`;
+    upsertTravelRecommendation({ procedure, country:destinations[0] || "Any", month, budgetLabel:budget, recommendedDestination:city, recommendedCityCode:cityCode, recommendedAirportCodes:airports, preferredDestinations:destinations, summary, createdAt:new Date().toISOString() });
+    const params = new URLSearchParams({ destination:city, destinationCityCode:cityCode, destinationAirports:airports.join(","), country:destinations[0] || "Any", preferredDestinations:destinations.join(","), month, procedure, budgetLabel:budget });
+    runNavOverlay("/travel"); router.push(`/travel?${params.toString()}`);
   };
-
-  const canNext = () => {
-    switch (step) {
-      case 0:
-        return Boolean(form.procedure);
-      case 1:
-        return form.preferredDestinations.length > 0 && Boolean(form.month);
-      case 2:
-        return Boolean(form.budgetLabel);
-      case 3:
-        return true;
-      default:
-        return false;
-    }
-  };
-
-  const toggleDestination = (destination: string) => {
-    setForm((prev) => {
-      const exists = prev.preferredDestinations.includes(destination);
-      return {
-        ...prev,
-        preferredDestinations: exists
-          ? prev.preferredDestinations.filter((value) => value !== destination)
-          : [...prev.preferredDestinations, destination],
-      };
-    });
-  };
-
-  const openBrowseTravelWithRecommendation = () => {
-    const rec = buildTravelSummary(form);
-    upsertTravelRecommendation({
-      procedure: form.procedure,
-      country: form.preferredDestinations[0] ?? "Any",
-      month: form.month,
-      budgetLabel: form.budgetLabel,
-      recommendedDestination: rec.destination,
-      recommendedCityCode: rec.cityCode,
-      recommendedAirportCodes: rec.airportCodes,
-      preferredDestinations: form.preferredDestinations,
-      summary: rec.summary,
-      createdAt: new Date().toISOString(),
-    });
-
-    const params = new URLSearchParams({
-      destination: rec.destination,
-      destinationCityCode: rec.cityCode,
-      destinationAirports: rec.airportCodes.join(","),
-      country: form.preferredDestinations[0] || "Any",
-      preferredDestinations: form.preferredDestinations.join(","),
-      month: form.month,
-      procedure: form.procedure,
-      budgetLabel: form.budgetLabel,
-    });
-    router.push(`/travel?${params.toString()}`);
-  };
-
-  const goToStep = (nextStep: number) => {
-    setStep(nextStep);
-    window.requestAnimationFrame(() => {
-      contentRef.current?.scrollIntoView({
-        behavior: "smooth",
-        block: "center",
-      });
-    });
-  };
-
-  return (
-    <AppShell>
-      <div ref={contentRef} className="mx-auto max-w-2xl px-4 py-12 lg:py-20">
-        <div className="mb-10 text-center">
-          <h1 className="text-3xl font-bold text-foreground">Plan your carecation</h1>
-          <p className="mt-2 text-muted-foreground">
-            Follow the flow: care preferences, destination, budget, then travel.
-          </p>
-        </div>
-
-        <div className="mb-8">
-          <Stepper steps={STEPS} currentStep={step} />
-        </div>
-
-        <Card>
-          <CardContent className="p-6 sm:p-8">
-            {step === 0 && (
-              <div className="space-y-4">
-                <Label className="text-base font-semibold">
-                  What procedure are you looking for?
-                </Label>
-                <RadioGroup
-                  value={form.procedure}
-                  onValueChange={(value) => update("procedure", value)}
-                >
-                  {PROCEDURE_CATEGORIES.map((cat) => (
-                    <div
-                      key={cat}
-                      className="cursor-pointer rounded-lg border p-4 transition-colors hover:bg-muted/50"
-                    >
-                      <div className="flex items-center gap-3">
-                        <RadioGroupItem value={cat} id={cat} />
-                        <Label htmlFor={cat} className="cursor-pointer flex-1">
-                          <span className="font-medium">{cat}</span>
-                        </Label>
-                      </div>
-                    </div>
-                  ))}
-                </RadioGroup>
-              </div>
-            )}
-
-            {step === 1 && (
-              <div className="space-y-6">
-                <div className="space-y-3">
-                  <Label className="text-base font-semibold">
-                    Preferred destinations (select multiple)
-                  </Label>
-                  <div className="grid gap-2 sm:grid-cols-2">
-                    {INTAKE_DESTINATIONS.map((destination) => {
-                      const checked = form.preferredDestinations.includes(destination);
-                      return (
-                        <label
-                          key={destination}
-                          className="flex cursor-pointer items-center gap-3 rounded-lg border p-3 hover:bg-muted/50"
-                        >
-                          <Checkbox
-                            checked={checked}
-                            onCheckedChange={() => toggleDestination(destination)}
-                          />
-                          <span className="text-sm text-foreground">{destination}</span>
-                        </label>
-                      );
-                    })}
-                  </div>
-                  <p className="text-xs text-muted-foreground">
-                    Selected:{" "}
-                    {form.preferredDestinations.length > 0
-                      ? form.preferredDestinations.join(", ")
-                      : "none"}
-                  </p>
-                </div>
-                <div className="space-y-3">
-                  <Label className="text-base font-semibold">When do you want to travel?</Label>
-                  <Select value={form.month} onValueChange={(value) => update("month", value)}>
-                    <SelectTrigger>
-                      <SelectValue placeholder="Select month" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {TRAVEL_MONTHS.map((month) => (
-                        <SelectItem key={month} value={month}>
-                          {month}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-              </div>
-            )}
-
-            {step === 2 && (
-              <div className="space-y-4">
-                <Label className="text-base font-semibold">What is your budget range?</Label>
-                <RadioGroup
-                  value={form.budgetLabel}
-                  onValueChange={(value) => update("budgetLabel", value)}
-                >
-                  {BUDGET_RANGES.map((budget) => (
-                    <div
-                      key={budget.label}
-                      className="cursor-pointer rounded-lg border p-4 transition-colors hover:bg-muted/50"
-                    >
-                      <div className="flex items-center gap-3">
-                        <RadioGroupItem value={budget.label} id={budget.label} />
-                        <Label htmlFor={budget.label} className="cursor-pointer flex-1 font-medium">
-                          {budget.label}
-                        </Label>
-                      </div>
-                    </div>
-                  ))}
-                </RadioGroup>
-              </div>
-            )}
-
-            {step === 3 && (
-              <div className="space-y-5">
-                <div className="rounded-lg border border-primary/25 bg-primary/10 p-4">
-                  <h2 className="text-base font-semibold text-foreground">Travel recommendation</h2>
-                  <p className="mt-2 text-sm text-muted-foreground">
-                    {recommendation.summary}
-                  </p>
-                  <div className="mt-3 flex flex-wrap gap-2 text-xs text-muted-foreground">
-                    <span className="rounded-md bg-background px-2 py-1">
-                      City code: {recommendation.cityCode}
-                    </span>
-                    {recommendation.airportCodes.length > 0 && (
-                      <span className="rounded-md bg-background px-2 py-1">
-                        Airports: {recommendation.airportCodes.join(", ")}
-                      </span>
-                    )}
-                  </div>
-                </div>
-                <p className="text-sm text-muted-foreground">
-                  Click Next to continue to Browse Travel.
-                </p>
-              </div>
-            )}
-
-            <div className="mt-8 flex items-center justify-between border-t pt-6">
-              <Button
-                variant="outline"
-                onClick={() => goToStep(Math.max(0, step - 1))}
-                disabled={step === 0}
-              >
-                <ArrowLeft className="mr-2 h-4 w-4" />
-                Back
-              </Button>
-              {step < STEPS.length - 1 ? (
-                <Button
-                  onClick={() => goToStep(Math.min(STEPS.length - 1, step + 1))}
-                  disabled={!canNext()}
-                >
-                  Next
-                  <ArrowRight className="ml-2 h-4 w-4" />
-                </Button>
-              ) : (
-                <Button onClick={openBrowseTravelWithRecommendation} disabled={!canNext()}>
-                  Next
-                  <ArrowRight className="ml-2 h-4 w-4" />
-                </Button>
-              )}
-            </div>
-          </CardContent>
-        </Card>
+  const questions = ["What care are you looking for?", "Where would you like to go?", "When do you want to travel?", "What's your budget?"];
+  const image = `/destinations/${photos[destinations[0] || "Thailand"]}.jpg`;
+  return <AppShell><div className="care-page intake-page min-h-[78vh]">
+    <div className="mx-auto max-w-[1240px]">
+      <div className="intake-topbar">
+        <Link href="/" aria-label="Carecation home" className="care-brand"><span className="care-brand-mark"><Image src="/brand/carecation-heart-light.png" alt="" fill sizes="22px"/></span><span>Care<span>cation</span></span></Link>
+        <p className="text-sm font-extrabold text-muted-foreground">{step < 4 ? `${step + 1} / 4` : "Your plan"}</p>
+        <div className="intake-controls"><ThemeToggle/><Link href="/" aria-label="Exit planning" className="rounded-full p-2 hover:bg-secondary"><X size={20}/></Link></div>
       </div>
-    </AppShell>
-  );
+      <div className="relative mt-3 h-px bg-border"><div className="h-px bg-primary transition-[width] duration-1000" style={{width:`${Math.min(step/4,1)*100}%`}}/><Plane aria-hidden="true" className="absolute -top-3 text-primary transition-[left] duration-1000" size={22} style={{left:`calc(${Math.min(step/4,1)*100}% - 11px)`,transform:"rotate(45deg)"}}/></div>
+      {step < 4 ? <section key={step} className="pt-20 pb-12 animate-care-rise">
+        <h1 className="care-h1 max-w-[900px]">{questions[step]}</h1>
+        {step === 0 && <div className="mt-12 grid gap-x-14 gap-y-1 sm:grid-cols-2">{PROCEDURE_CATEGORIES.map((item) => <button key={item} onClick={() => chooseAuto(() => setProcedure(item))} className={`flex min-h-16 items-center gap-3 border-b border-border text-left text-xl font-bold tracking-[-.02em] transition-colors sm:text-[26px] ${procedure===item?"text-primary":"hover:text-primary"}`}><span className={`h-2.5 w-2.5 rounded-full bg-primary transition-opacity ${procedure===item?"opacity-100":"opacity-0"}`}/>{item}</button>)}</div>}
+        {step === 1 && <><p className="mt-3 text-lg font-semibold text-muted-foreground">Pick as many as you like.</p><div className="mt-10 flex flex-wrap gap-3">{INTAKE_DESTINATIONS.map((item) => <button key={item} onClick={() => toggle(item)} className={`rounded-full border px-5 py-3 font-bold transition-colors ${destinations.includes(item)?"border-primary bg-primary text-primary-foreground":"border-border hover:border-primary"}`}>{item}</button>)}</div><div className="mt-12 flex items-center gap-6"><button className="care-pill disabled:opacity-35" disabled={!destinations.length} onClick={advance}>Continue <ArrowRight size={17}/></button><button className="text-sm font-bold text-muted-foreground" onClick={() => setStep(0)}><ArrowLeft className="mr-2 inline" size={15}/>Back</button></div></>}
+        {step === 2 && <div className="mt-12 grid grid-cols-2 gap-x-12 sm:grid-cols-3 lg:grid-cols-4">{TRAVEL_MONTHS.map((item) => <button key={item} onClick={() => chooseAuto(() => setMonth(item))} className={`border-b border-border py-4 text-left text-xl font-bold transition-colors hover:text-primary ${month===item?"text-primary":""}`}>{item}{month===item&&<Check className="ml-2 inline" size={16}/>}</button>)}</div>}
+        {step === 3 && <div className="mt-12 grid gap-x-12 sm:grid-cols-2">{BUDGET_RANGES.map((item) => <button key={item.label} onClick={() => chooseAuto(() => setBudget(item.label))} className={`flex items-center justify-between border-b border-border py-6 text-left text-2xl font-bold transition-colors hover:text-primary ${budget===item.label?"text-primary":""}`}>{item.label}{budget===item.label&&<Check size={20}/>}</button>)}</div>}
+      </section> : <section className="grid items-center gap-12 py-16 lg:grid-cols-[1fr_.9fr]">
+        <div><p className="mb-5 font-extrabold text-muted-foreground">Your starting point</p><h1 className="care-h1">Start in <span className="text-primary">{city}.</span></h1><p className="mt-6 max-w-xl text-lg font-semibold leading-relaxed text-muted-foreground">{procedure} · {month} · {budget}. Compare flights first, then add a hotel and a care estimate.</p><div className="mt-9 flex flex-wrap items-center gap-6"><button className="care-pill" onClick={findFlights}>Find flights <ArrowRight size={17}/></button><button onClick={() => {setStep(0);setProcedure("");setDestinations([]);setMonth("");setBudget("");}} className="font-bold text-muted-foreground underline underline-offset-4">Start over</button></div></div>
+        <div className="relative aspect-[1.1] overflow-hidden rounded-[28px]"><Image src={image} alt={`${destinations[0] || "Thailand"} travel destination`} fill sizes="(max-width: 1024px) 100vw, 45vw" className="object-cover animate-care-zoom" priority/></div>
+      </section>}
+      {step > 0 && step < 4 && <button onClick={() => {if(timer.current)clearTimeout(timer.current);setStep(step-1);}} className="mt-3 inline-flex items-center gap-2 font-bold text-muted-foreground"><ArrowLeft size={16}/>Back</button>}
+    </div>
+  </div></AppShell>;
 }

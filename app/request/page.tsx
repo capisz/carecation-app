@@ -13,8 +13,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { Badge } from "@/components/ui/badge";
-import { ArrowLeft, CheckCircle2, MapPin, Send } from "lucide-react";
+import { ArrowLeft, CheckCircle2, Send } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { Toaster } from "@/components/ui/toaster";
 import { readActivePlanId, upsertHealthcareEstimate } from "@/lib/itinerary-plan";
@@ -74,32 +73,26 @@ function RequestContent() {
 
   if (submitted) {
     return (
-      <div className="mx-auto max-w-lg px-4 py-20 text-center">
-        <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-primary/10 mb-6">
-          <CheckCircle2 className="h-8 w-8 text-primary" />
+      <div className="care-page mx-auto max-w-3xl text-center">
+        <div className="mx-auto mb-8 grid h-[72px] w-[72px] place-items-center rounded-full bg-primary/10">
+          <CheckCircle2 className="h-10 w-10 text-primary" />
         </div>
-        <h1 className="text-2xl font-bold text-foreground mb-3">
-          Quote request submitted!
+        <h1 className="care-h1 mb-5">
+          Request sent.
         </h1>
-        <p className="text-muted-foreground mb-6">
-          Thank you, {form.name}. We have received your quote request
-          {provider ? ` for ${provider.name}` : ""}. Our team will get
-          back to you within 24-48 hours.
+        <p className="mx-auto mb-8 max-w-2xl text-lg font-semibold leading-relaxed text-muted-foreground">
+          {provider ? `${provider.name} will reply within 24–48 hours. The estimate is now in your itinerary.` : `Thank you, ${form.name}. Your request has been submitted.`}
         </p>
         <div className="flex justify-center gap-3">
-          <Button asChild variant="outline">
-            <Link href="/results">Browse more providers</Link>
-          </Button>
-          <Button asChild>
-            <Link href="/">Return home</Link>
-          </Button>
+          <Link href="/itinerary" className="care-pill">View itinerary</Link>
+          <Link href="/clinics" className="self-center font-bold text-muted-foreground underline underline-offset-4">Browse more clinics</Link>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="mx-auto max-w-2xl px-4 py-8 lg:px-8 lg:py-12">
+    <div className="care-page request-page">
       <Button variant="ghost" asChild className="mb-6 text-muted-foreground">
         <Link href={provider ? `/provider/${provider.id}` : "/results"}>
           <ArrowLeft className="mr-2 h-4 w-4" />
@@ -107,36 +100,14 @@ function RequestContent() {
         </Link>
       </Button>
 
-      <h1 className="text-2xl font-bold text-foreground sm:text-3xl mb-2">
-        Request a Quote
+      <h1 className="care-h1 mb-3">
+        Request a quote
       </h1>
-      <p className="text-muted-foreground mb-8">
-        Fill in your details and we will connect you with the provider for a
-        personalized quote.
-      </p>
+      {provider && <p className="mb-10 text-lg font-semibold text-muted-foreground">{provider.name} · {provider.city} · from ${provider.priceRangeUSD.min.toLocaleString()}</p>}
 
-      {provider && (
-        <Card className="mb-8">
-          <CardContent className="p-5 flex items-center gap-4">
-            <div className="h-12 w-12 rounded-lg bg-primary/10 flex items-center justify-center shrink-0">
-              <MapPin className="h-6 w-6 text-primary" />
-            </div>
-            <div className="flex-1 min-w-0">
-              <p className="font-semibold text-foreground truncate">{provider.name}</p>
-              <p className="text-sm text-muted-foreground">
-                {provider.city}, {provider.country}
-              </p>
-            </div>
-            <Badge className="bg-primary/10 text-primary border-0 shrink-0">
-              From ${provider.priceRangeUSD.min.toLocaleString()}
-            </Badge>
-          </CardContent>
-        </Card>
-      )}
-
-      <Card>
+      <Card className="border-0 bg-transparent shadow-none">
         <CardContent className="p-6 sm:p-8">
-          <form onSubmit={handleSubmit} className="space-y-5">
+          <form onSubmit={handleSubmit} className="request-fields grid gap-x-10 gap-y-6 sm:grid-cols-2">
             <div className="space-y-2">
               <Label htmlFor="name">Full name *</Label>
               <Input
@@ -149,7 +120,7 @@ function RequestContent() {
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="email">Email address *</Label>
+              <Label htmlFor="email">Email *</Label>
               <Input
                 id="email"
                 type="email"
@@ -172,17 +143,17 @@ function RequestContent() {
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="travelWindow">Preferred travel window *</Label>
+              <Label htmlFor="travelWindow">When do you want to travel? *</Label>
               <Input
                 id="travelWindow"
                 required
                 value={form.travelWindow}
                 onChange={(e) => update("travelWindow", e.target.value)}
-                placeholder="e.g., March 2026 - April 2026"
+                placeholder="March – April 2027"
               />
             </div>
 
-            <div className="space-y-2">
+            <div className="space-y-2 sm:col-span-2">
               <Label htmlFor="notes">Additional notes</Label>
               <Textarea
                 id="notes"
@@ -195,7 +166,7 @@ function RequestContent() {
 
             <Button type="submit" className="w-full" size="lg">
               <Send className="h-4 w-4 mr-2" />
-              Submit quote request
+              Send request <span className="ml-2">→</span>
             </Button>
           </form>
         </CardContent>

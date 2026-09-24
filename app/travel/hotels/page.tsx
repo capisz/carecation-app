@@ -10,9 +10,9 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Toaster } from "@/components/ui/toaster";
 import { useToast } from "@/hooks/use-toast";
-import { upsertTravelSelections, type PlannedHotel } from "@/lib/itinerary-plan";
+import { readItineraryPlan, upsertTravelSelections, type PlannedHotel } from "@/lib/itinerary-plan";
 import { cn } from "@/lib/utils";
-import { AlertCircle, BedDouble, CheckCircle2, DollarSign, Loader2 } from "lucide-react";
+import { AlertCircle, ArrowRight, CheckCircle2, Loader2 } from "lucide-react";
 
 type HotelResult = {
   id: string;
@@ -193,21 +193,12 @@ function HotelsPageContent() {
   const procedure = searchParams.get("procedure") ?? "";
   const budgetLabel = searchParams.get("budgetLabel") ?? "";
 
-  const browseCareHref = useMemo(() => {
-    const params = new URLSearchParams();
-    if (procedure) params.set("procedure", procedure);
-    if (budgetLabel) params.set("budgetLabel", budgetLabel);
-    if (preferredDestinations.length > 0) {
-      params.set("preferredDestinations", preferredDestinations.join(","));
-    }
-    return params.toString().length > 0 ? `/results?${params.toString()}` : "/results";
-  }, [procedure, budgetLabel, preferredDestinations]);
-
   const [isLoadingHotels, setIsLoadingHotels] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [warning, setWarning] = useState<string | null>(null);
   const [hotels, setHotels] = useState<HotelResult[]>([]);
   const [selectedHotelId, setSelectedHotelId] = useState<string | null>(null);
+  const plannedFlight = readItineraryPlan().flight;
   const [isContinuingToCare, setIsContinuingToCare] = useState(false);
   const [imageAttemptById, setImageAttemptById] = useState<Record<string, number>>({});
   const [visibleHotelsCount, setVisibleHotelsCount] = useState(6);
@@ -270,6 +261,11 @@ function HotelsPageContent() {
     () => hotels.find((hotel) => hotel.id === selectedHotelId) ?? null,
     [hotels, selectedHotelId],
   );
+  const selectedHotelPriceLabel = selectedHotel
+    ? typeof usdByHotelId[selectedHotel.id] === "number"
+      ? formatPrice(usdByHotelId[selectedHotel.id], "USD")
+      : conversionErrorByHotelId[selectedHotel.id] ?? "Converting…"
+    : "";
 
   const visibleHotels = useMemo(
     () => hotels.slice(0, visibleHotelsCount),
@@ -356,7 +352,7 @@ function HotelsPageContent() {
       if (!saved) {
         return;
       }
-      router.push(browseCareHref);
+      router.push("/itinerary");
     } finally {
       setIsContinuingToCare(false);
     }
@@ -364,9 +360,10 @@ function HotelsPageContent() {
 
   return (
     <AppShell>
-      <div className="mx-auto max-w-7xl px-4 py-8 lg:px-8 lg:py-12">
+      <div className="care-page travel-page">
+        <div className="care-tabs mb-10" aria-label="Travel type"><Link href="/travel">Flights</Link><Link href="/travel/hotels" aria-current="page">Hotels</Link></div>
         <div className="mb-8 space-y-2">
-          <h1 className="text-3xl font-bold text-foreground sm:text-4xl">Browse Hotels</h1>
+          <h1 className="care-h1">Find a place to stay.</h1>
           <p className="text-muted-foreground">
             Hotel options for <span className="font-medium text-foreground">{destinationLabel}</span>
           </p>
@@ -406,7 +403,7 @@ function HotelsPageContent() {
                   Saving hotel...
                 </>
               ) : (
-                "Next: Select care clinic"
+                "Add to itinerary"
               )}
             </Button>
           </div>
@@ -440,7 +437,7 @@ function HotelsPageContent() {
 
         {!isLoadingHotels && hotels.length > 0 && (
           <>
-            <div className="mb-8 grid gap-3 lg:grid-cols-2 xl:grid-cols-3">
+            <div id="hotel-results" className="hotel-results-grid mb-8 grid gap-3 lg:grid-cols-2 xl:grid-cols-3">
               {visibleHotels.map((hotel) => {
                 const isSelected = selectedHotelId === hotel.id;
                 const imageCandidates = getHotelImageSources(hotel);
@@ -448,6 +445,7 @@ function HotelsPageContent() {
                 const imageSrc =
                   imageCandidates[Math.min(imageAttempt, imageCandidates.length - 1)];
                 const normalizedCurrency = normalizeCurrencyCode(hotel.currency);
+                const nightCount = Math.max(1, Math.round((new Date(hotel.checkOutDate).getTime() - new Date(hotel.checkInDate).getTime()) / 86400000));
                 const usdValue = usdByHotelId[hotel.id];
                 const conversionError = conversionErrorByHotelId[hotel.id];
                 const hasUsdValue =
@@ -463,14 +461,15 @@ function HotelsPageContent() {
                 return (
                   <Card
                     key={hotel.id}
+                    data-selected={isSelected ? "true" : undefined}
                     className={cn(
-                      "overflow-hidden shadow-sm transition-all hover:shadow-md",
+                      "hotel-result-card overflow-hidden shadow-sm transition-all hover:shadow-md",
                       isSelected && "border-primary ring-1 ring-primary/50",
                     )}
                   >
                     <CardContent className="p-0">
                       {/* Borderless top image area: sourced hotel image, then local hotel fallback. */}
-                      <div className="relative h-36 w-full overflow-hidden">
+                      <div className="relative h-[250px] w-full overflow-hidden rounded-[22px]">
                         {/* eslint-disable-next-line @next/next/no-img-element */}
                         <img
                           src={imageSrc}
@@ -483,23 +482,19 @@ function HotelsPageContent() {
                             }))
                           }
                         />
+                        <button type="button" aria-label={isSelected ? "Hotel selected" : `Select ${hotel.name}`} onClick={() => setSelectedHotelId(hotel.id)} className={`absolute right-4 top-4 grid h-11 w-11 place-items-center rounded-full ${isSelected ? "bg-primary text-primary-foreground" : "bg-background text-foreground"}`}><CheckCircle2 size={22}/></button>
                       </div>
 
                       <div className="p-4">
                         <div className="mb-1.5 flex items-start justify-between gap-2">
                           <div>
-                            <p className="line-clamp-2 text-base font-semibold text-foreground">
+                            <p className={`line-clamp-2 text-base font-extrabold ${isSelected ? "text-primary" : "text-foreground"}`}>
                               {hotel.name}
                             </p>
-                            <p className="text-xs text-muted-foreground">
-                              {hotel.cityCode}
-                              {hotel.rating !== null ? ` • ${hotel.rating}/5` : ""}
+                            <p className="text-sm font-semibold text-muted-foreground">
+                              {hotel.rating !== null ? `★ ${hotel.rating} · ` : ""}{nightCount} nights
                             </p>
                           </div>
-                          <Badge variant="outline" className="shrink-0">
-                            <BedDouble className="mr-1 h-3.5 w-3.5" />
-                            {hotel.hotelId}
-                          </Badge>
                         </div>
 
                         <p className="mb-1 text-xs uppercase tracking-wide text-muted-foreground">
@@ -508,12 +503,7 @@ function HotelsPageContent() {
                         <p className="mb-1.5 text-xl font-semibold text-foreground">
                           {usdPrimaryText}
                         </p>
-                        {normalizedCurrency !== "USD" && (
-                          <p className="mb-1.5 text-[11px] text-muted-foreground">
-                            Original: {formatPrice(hotel.totalPrice, hotel.currency)}
-                            {conversionError ? " • USD conversion unavailable" : ""}
-                          </p>
-                        )}
+                        {conversionError && <p className="mb-1.5 text-xs text-destructive">USD conversion unavailable</p>}
 
                         <p className="mb-1.5 text-xs text-muted-foreground">
                           {hotel.checkInDate} → {hotel.checkOutDate}
@@ -536,14 +526,6 @@ function HotelsPageContent() {
                             {hotel.cancellationPolicy}
                           </div>
                         )}
-
-                        <div className="mb-3 flex items-center gap-1 text-[11px] text-muted-foreground">
-                          <DollarSign className="h-3 w-3" />
-                          Displayed in USD
-                          {normalizedCurrency !== "USD"
-                            ? ` • Source: ${normalizedCurrency}`
-                            : ""}
-                        </div>
 
                         <Button
                           type="button"
@@ -599,13 +581,14 @@ function HotelsPageContent() {
                       Saving hotel...
                     </>
                   ) : (
-                    "Next: Select care clinic"
+                    "Add to itinerary"
                   )}
                 </Button>
               </div>
             </div>
           </>
         )}
+      {plannedFlight && <div className="care-action-bar" role="region" aria-label="Selected travel"><span>{plannedFlight.originIata} → {plannedFlight.destinationIata} · {formatPrice(plannedFlight.totalPrice,plannedFlight.currency)}{selectedHotel ? ` · ${selectedHotel.name} ${selectedHotelPriceLabel}` : ""}</span><button onClick={selectedHotel ? handleContinueToCare : () => document.getElementById("hotel-results")?.scrollIntoView({behavior:"smooth",block:"start"})} disabled={Boolean(selectedHotel && isContinuingToCare)} className="care-action-cta">{selectedHotel ? "Add to itinerary" : "Choose a hotel"} <ArrowRight size={15}/></button></div>}
       </div>
       <Toaster />
     </AppShell>

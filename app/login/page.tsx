@@ -5,12 +5,14 @@ import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { AppShell } from "@/components/app-shell";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent } from "@/components/ui/card";
+import Image from "next/image";
+import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { getSupabaseBrowserClient } from "@/lib/supabase/client";
 import { readItineraryPlan, syncItineraryPlanToServer } from "@/lib/itinerary-plan";
 import { Loader2, LogIn, UserPlus } from "lucide-react";
+import { ThemeToggle } from "@/components/theme-toggle";
 
 type AuthMode = "signin" | "signup";
 
@@ -82,23 +84,30 @@ function LoginContent() {
 
   return (
     <AppShell>
-      <div className="mx-auto max-w-md px-4 py-12 lg:py-16">
+      <div className="login-layout">
+        <div className="login-photo">
+          <Link href="/" className="login-brand"><Image src="/brand/carecation-heart-light.png" alt="" width={24} height={24} />Carecation</Link>
+          <ThemeToggle className="login-theme-toggle" />
+        </div>
+        <div className="login-form">
+      <div className="login-content">
         <div className="mb-6">
           <h1 className="text-3xl font-bold text-foreground">
-            {mode === "signin" ? "Sign in" : "Create account"}
+            {mode === "signin" ? "Welcome back" : "Create your account"}
           </h1>
           <p className="mt-2 text-sm text-muted-foreground">
             Save your Carecation plans and return to them later.
           </p>
         </div>
 
-        <Card>
-          <CardContent className="p-6">
+        <Card className="login-card">
+          <div className="p-0">
             <form onSubmit={handleSubmit} className="space-y-4">
               {mode === "signup" && (
                 <div className="space-y-2">
                   <Label htmlFor="fullName">Name</Label>
                   <Input
+                    className="login-input"
                     id="fullName"
                     value={fullName}
                     onChange={(event) => setFullName(event.target.value)}
@@ -110,9 +119,11 @@ function LoginContent() {
 
               <div className="space-y-2">
                 <Label htmlFor="email">Email</Label>
-                <Input
-                  id="email"
-                  type="email"
+                  <Input
+                    className="login-input"
+                    id="email"
+                    type="email"
+                    placeholder="you@email.com"
                   value={email}
                   onChange={(event) => setEmail(event.target.value)}
                   autoComplete="email"
@@ -122,9 +133,11 @@ function LoginContent() {
 
               <div className="space-y-2">
                 <Label htmlFor="password">Password</Label>
-                <Input
-                  id="password"
-                  type="password"
+                  <Input
+                    className="login-input"
+                    id="password"
+                    type="password"
+                    placeholder="8+ characters"
                   value={password}
                   onChange={(event) => setPassword(event.target.value)}
                   autoComplete={mode === "signin" ? "current-password" : "new-password"}
@@ -134,17 +147,17 @@ function LoginContent() {
               </div>
 
               {error && (
-                <div className="rounded-md border border-destructive/30 bg-destructive/10 px-3 py-2 text-sm text-destructive">
+                <p role="alert" className="text-sm font-bold text-destructive">
                   {error}
-                </div>
+                </p>
               )}
               {message && (
-                <div className="rounded-md border border-border bg-muted px-3 py-2 text-sm text-muted-foreground">
+                <p role="status" className="text-sm font-semibold text-muted-foreground">
                   {message}
-                </div>
+                </p>
               )}
 
-              <Button type="submit" className="w-full" disabled={isSubmitting}>
+              <Button type="submit" className="h-14 w-full rounded-full text-base font-extrabold" disabled={isSubmitting}>
                 {isSubmitting ? (
                   <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                 ) : mode === "signin" ? (
@@ -186,9 +199,10 @@ function LoginContent() {
                 .
               </p>
             </div>
-          </CardContent>
+          </div>
         </Card>
       </div>
+      </div></div>
     </AppShell>
   );
 }

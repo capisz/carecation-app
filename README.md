@@ -105,10 +105,10 @@ See `docs/supabase-amadeus-readiness.md` for the full setup checklist.
 pnpm dev
 ```
 
-`pnpm dev` uses Webpack dev mode for local stability. If you specifically want Turbopack, run:
+`pnpm dev` uses Turbopack for faster local compilation. To use the Webpack dev server, run:
 
 ```bash
-pnpm dev:turbo
+pnpm exec next dev --webpack
 ```
 
 Open [http://localhost:3000](http://localhost:3000).

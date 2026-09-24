@@ -1,459 +1,99 @@
 "use client";
 
-import Link from "next/link";
 import Image from "next/image";
-import { useRouter } from "next/navigation";
+import Link from "next/link";
+import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
-import { SmartLink } from "./smart-link";
-import { Button } from "@/components/ui/button";
-import { FolderOpen, LogIn, Menu, X, Sun, Moon, ArrowRight } from "lucide-react";
-import { useTheme } from "next-themes";
+import { ArrowRight, FolderOpen, Heart, LogIn } from "lucide-react";
+import { ThemeToggle } from "@/components/theme-toggle";
 import { useOverlay } from "./overlay/overlay-provider";
 import { getSupabaseBrowserClient } from "@/lib/supabase/client";
-import {
-  clearItineraryPlan,
-  readItineraryPlan,
-  ITINERARY_PLAN_UPDATED_EVENT,
-  type ItineraryPlan,
-} from "@/lib/itinerary-plan";
+import { readItineraryPlan, ITINERARY_PLAN_UPDATED_EVENT, type ItineraryPlan } from "@/lib/itinerary-plan";
 
-const footerHeaderLinks = [
+const navItems = [
+  { label: "Care", href: "/clinics" },
+  { label: "Travel", href: "/travel" },
   { label: "Testimonials", href: "/testimonials" },
-  { label: "Transparency", href: "/privacy" },
-  { label: "Feedback", href: "/support" },
 ];
-
-const footerColumns = [
-  {
-    title: "Overview",
-    links: [
-      { label: "Browse Care", href: "/clinics" },
-      { label: "Browse Travel", href: "/travel" },
-      { label: "Plan Your Care", href: "/intake" },
-      { label: "About", href: "#footer-about" },
-    ],
-  },
-  {
-    title: "Resources",
-    links: [
-      { label: "FAQ", href: "#footer-faq", id: "footer-faq" },
-      { label: "Customer Support", href: "/support" },
-      { label: "Privacy", href: "/privacy" },
-      { label: "Terms", href: "/terms" },
-      { label: "Cookies", href: "/cookies" },
-      { label: "Request Form", href: "/request" },
-    ],
-  },
-  {
-    title: "For Providers",
-    links: [
-      { label: "Provider Application", href: "/providers" },
-      { label: "Provider Info", href: "#footer-providers", id: "footer-providers" },
-      { label: "Medical Disclaimer", href: "/medical-disclaimer" },
-    ],
-  },
+const footerItems = [
+  ["Testimonials", "/testimonials"], ["Transparency", "/privacy"], ["Feedback", "/support"],
+  ["Privacy", "/privacy"], ["Terms", "/terms"], ["Providers", "/providers"],
 ];
-
-function hasStartedItinerary(plan: ItineraryPlan): boolean {
-  const hasFlight = Boolean(plan.flight?.id);
-  const hasHotel = Boolean(plan.hotel?.id || plan.hotel?.hotelId || plan.hotel?.name);
-  const hasHealthcareEstimate = Boolean(
-    plan.healthcareEstimate?.providerId || plan.healthcareEstimate?.providerName,
-  );
-
-  return hasFlight || hasHotel || hasHealthcareEstimate;
+function hasStartedItinerary(plan: ItineraryPlan) {
+  return Boolean(plan.flight?.id || plan.hotel?.id || plan.hotel?.hotelId || plan.hotel?.name || plan.healthcareEstimate?.providerId || plan.healthcareEstimate?.providerName);
 }
 
 export function AppShell({ children }: { children: React.ReactNode }) {
   const router = useRouter();
+  const pathname = usePathname();
   const { runNavOverlay } = useOverlay();
-  const [mobileOpen, setMobileOpen] = useState(false);
-  const [hasStartedPlan, setHasStartedPlan] = useState(false);
-  const [userEmail, setUserEmail] = useState<string | null>(null);
-  const { resolvedTheme, setTheme } = useTheme();
+  const [condensed, setCondensed] = useState(false);
+  const [providerCondensed, setProviderCondensed] = useState(false);
+  const [activeSection, setActiveSection] = useState("overview");
+  const [hasPlan, setHasPlan] = useState(false);
+  const [email, setEmail] = useState<string | null>(null);
 
   useEffect(() => {
-    const syncPlanState = () => {
-      const plan = readItineraryPlan();
-      const started = hasStartedItinerary(plan);
-      setHasStartedPlan(started);
-      if (!started) {
-        fetch("/api/plans/active")
-          .then((response) => (response.ok ? response.json() : null))
-          .then((data) => {
-            if (data?.plan?.plan_snapshot) {
-              setHasStartedPlan(true);
-            }
-          })
-          .catch(() => null);
-      }
-    };
-
-    syncPlanState();
-    window.addEventListener("storage", syncPlanState);
-    window.addEventListener("focus", syncPlanState);
-    window.addEventListener(ITINERARY_PLAN_UPDATED_EVENT, syncPlanState);
-
-    return () => {
-      window.removeEventListener("storage", syncPlanState);
-      window.removeEventListener("focus", syncPlanState);
-      window.removeEventListener(ITINERARY_PLAN_UPDATED_EVENT, syncPlanState);
-    };
+    const onScroll = () => { setCondensed(window.scrollY > 72); setProviderCondensed(window.scrollY > 420); };
+    onScroll();
+    window.addEventListener("scroll", onScroll, { passive: true });
+    return () => window.removeEventListener("scroll", onScroll);
   }, []);
-
   useEffect(() => {
-    const supabase = getSupabaseBrowserClient();
-    if (!supabase) return;
-
+    if (!pathname.startsWith("/provider/")) return;
+    const ids = ["overview", "cost", "reviews", "logistics"];
+    const observer = new IntersectionObserver((entries) => {
+      const visible = entries.filter((entry) => entry.isIntersecting).sort((a,b) => a.boundingClientRect.top - b.boundingClientRect.top)[0];
+      if (visible) setActiveSection(visible.target.id);
+    }, { rootMargin: "-40% 0px -45% 0px" });
+    ids.forEach((id) => { const element = document.getElementById(id); if (element) observer.observe(element); });
+    return () => observer.disconnect();
+  }, [pathname]);
+  useEffect(() => {
+    const sync = () => {
+      const started = hasStartedItinerary(readItineraryPlan());
+      setHasPlan(started);
+      if (!started) fetch("/api/plans/active").then((r) => r.ok ? r.json() : null).then((data) => setHasPlan(Boolean(data?.plan?.plan_snapshot))).catch(() => {});
+    };
+    sync(); window.addEventListener("storage", sync); window.addEventListener("focus", sync); window.addEventListener(ITINERARY_PLAN_UPDATED_EVENT, sync);
+    return () => { window.removeEventListener("storage", sync); window.removeEventListener("focus", sync); window.removeEventListener(ITINERARY_PLAN_UPDATED_EVENT, sync); };
+  }, []);
+  useEffect(() => {
+    const client = getSupabaseBrowserClient(); if (!client) return;
     let mounted = true;
-    supabase.auth.getUser().then(({ data }) => {
-      if (mounted) {
-        setUserEmail(data.user?.email ?? null);
-      }
-    });
-
-    const {
-      data: { subscription },
-    } = supabase.auth.onAuthStateChange((_event, session) => {
-      setUserEmail(session?.user.email ?? null);
-    });
-
-    return () => {
-      mounted = false;
-      subscription.unsubscribe();
-    };
+    client.auth.getUser().then(({ data }) => { if (mounted) setEmail(data.user?.email ?? null); });
+    const { data: { subscription } } = client.auth.onAuthStateChange((_event, session) => setEmail(session?.user.email ?? null));
+    return () => { mounted = false; subscription.unsubscribe(); };
   }, []);
 
-  const handleStartCarePlan = () => {
-    runNavOverlay("/intake");
-    router.push("/intake");
-  };
+  const start = () => { runNavOverlay("/intake"); router.push("/intake"); };
+  const actionLabel = hasPlan ? "My trip" : "Start your plan";
+  const action = () => { if (hasPlan) router.push("/itinerary"); else start(); };
+  const providerPage = pathname.startsWith("/provider/");
+  const links = providerPage && providerCondensed
+    ? [{ label:"Overview", href:"#overview" }, { label:"Cost", href:"#cost" }, { label:"Reviews", href:"#reviews" }, { label:"Logistics", href:"#logistics" }]
+    : navItems;
 
-  const handleRestartCarePlan = () => {
-    clearItineraryPlan();
-    setHasStartedPlan(false);
-    runNavOverlay("/intake");
-    router.push("/intake");
-  };
-  const handleViewItinerary = () => {
-    runNavOverlay("/itinerary");
-    router.push("/itinerary");
-  };
-  const currentYear = new Date().getFullYear();
-
-  return (
-    <div className="min-h-screen flex flex-col">
-      <header className="sticky top-0 z-50 bg-card/80 backdrop-blur-md border-b">
-        <div className="mx-auto flex h-20 max-w-7xl items-center justify-between px-4 lg:px-8">
-          <Link href="/" className="flex items-center gap-2 md:gap-3" aria-label="Carecation home">
-            {/* Bigger logo here */}
-            <span className="relative hidden h-7 w-7 shrink-0 sm:block">
-              <Image
-                src="/brand/carecation-heart-light.png"
-                alt="Carecation logo"
-                fill
-                sizes="40px"
-                className="object-contain dark:hidden"
-                priority
-              />
-              <Image
-                src="/brand/carecation-heart-dark.png"
-                alt="Carecation logo"
-                fill
-                sizes="40px"
-                className="hidden object-contain dark:block"
-                priority
-              />
-            </span>
-
-            <span className="flex flex-col leading-none">
-              <span className="text-2xl font-bold tracking-tight text-foreground sm:text-3xl">
-                Care<span className="text-primary">cation</span>
-              </span>
-              <span className="hidden md:block whitespace-nowrap text-[11px] text-muted-foreground">
-                Healthcare meets adventure.
-              </span>
-            </span>
-          </Link>
-
-          <div className="hidden md:flex items-center gap-3">
-            <Button
-              variant="ghost"
-              size="icon"
-              onClick={() => setTheme((resolvedTheme ?? "light") === "dark" ? "light" : "dark")}
-              aria-label="Toggle theme"
-              suppressHydrationWarning
-            >
-              <Sun className="h-5 w-5 rotate-0 scale-100 transition-all dark:-rotate-90 dark:scale-0" aria-hidden="true" />
-              <Moon className="absolute h-5 w-5 rotate-90 scale-0 transition-all dark:rotate-0 dark:scale-100" aria-hidden="true" />
-            </Button>
-
-            {userEmail ? (
-              <Button asChild variant="outline">
-                <Link href="/account/plans">
-                  <FolderOpen className="mr-2 h-4 w-4" aria-hidden="true" />
-                  My plans
-                </Link>
-              </Button>
-            ) : (
-              <Button asChild variant="outline">
-                <Link href="/login">
-                  <LogIn className="mr-2 h-4 w-4" aria-hidden="true" />
-                  Sign in
-                </Link>
-              </Button>
-            )}
-
-            {hasStartedPlan ? (
-              <>
-                <Button
-                  onClick={handleRestartCarePlan}
-                  onMouseEnter={() => router.prefetch("/intake")}
-                >
-                  Restart care plan
-                  <ArrowRight className="ml-2 h-4 w-4" aria-hidden="true" />
-                </Button>
-                <Button
-                  onClick={handleViewItinerary}
-                  onMouseEnter={() => router.prefetch("/itinerary")}
-                >
-                  View itinerary
-                </Button>
-              </>
-            ) : (
-              <Button
-                onClick={handleStartCarePlan}
-                onMouseEnter={() => router.prefetch("/intake")}
-              >
-                Begin your care plan
-                <ArrowRight className="ml-2 h-4 w-4" aria-hidden="true" />
-              </Button>
-            )}
-          </div>
-
-          <Button
-            variant="ghost"
-            size="icon"
-            className="md:hidden"
-            onClick={() => setMobileOpen(!mobileOpen)}
-            aria-expanded={mobileOpen}
-            aria-controls="mobile-menu"
-            aria-label={mobileOpen ? "Close navigation menu" : "Open navigation menu"}
-          >
-            {mobileOpen ? <X className="h-5 w-5" aria-hidden="true" /> : <Menu className="h-5 w-5" aria-hidden="true" />}
-          </Button>
-        </div>
-
-        {mobileOpen && (
-          <div id="mobile-menu" className="md:hidden border-t bg-card px-4 pb-4">
-            <nav className="flex flex-col gap-1 pt-2" aria-label="Mobile navigation">
-              <div className="flex items-center gap-2 mt-2">
-                <Button
-                  variant="outline"
-                  size="icon"
-                  onClick={() => setTheme((resolvedTheme ?? "light") === "dark" ? "light" : "dark")}
-                  aria-label="Toggle theme"
-                  suppressHydrationWarning
-                >
-                  <Sun className="h-4 w-4 rotate-0 scale-100 transition-all dark:-rotate-90 dark:scale-0" aria-hidden="true" />
-                  <Moon className="absolute h-4 w-4 rotate-90 scale-0 transition-all dark:rotate-0 dark:scale-100" aria-hidden="true" />
-                </Button>
-
-                {hasStartedPlan ? (
-                  <Button
-                    className="flex-1"
-                    onClick={() => {
-                      setMobileOpen(false);
-                      handleRestartCarePlan();
-                    }}
-                  >
-                    Restart care plan
-                    <ArrowRight className="ml-2 h-4 w-4" aria-hidden="true" />
-                  </Button>
-                ) : (
-                  <Button
-                    className="flex-1"
-                    onClick={() => {
-                      setMobileOpen(false);
-                      handleStartCarePlan();
-                    }}
-                  >
-                    Begin your care plan
-                    <ArrowRight className="ml-2 h-4 w-4" aria-hidden="true" />
-                  </Button>
-                )}
-              </div>
-              {hasStartedPlan && (
-                <div className="mt-2 flex items-center gap-2">
-                  <Button
-                    className="flex-1"
-                    onClick={() => {
-                      setMobileOpen(false);
-                      handleViewItinerary();
-                    }}
-                  >
-                    View itinerary
-                    <ArrowRight className="ml-2 h-4 w-4" aria-hidden="true" />
-                  </Button>
-                </div>
-              )}
-              <div className="mt-2 flex items-center gap-2">
-                {userEmail ? (
-                  <>
-                    <Button asChild variant="outline" className="flex-1">
-                      <Link href="/account/plans">
-                        <FolderOpen className="mr-2 h-4 w-4" aria-hidden="true" />
-                        My plans
-                      </Link>
-                    </Button>
-                    <Button asChild variant="outline" className="flex-1">
-                      <Link href="/auth/logout">Sign out</Link>
-                    </Button>
-                  </>
-                ) : (
-                  <Button asChild variant="outline" className="flex-1">
-                    <Link href="/login">
-                      <LogIn className="mr-2 h-4 w-4" aria-hidden="true" />
-                      Sign in
-                    </Link>
-                  </Button>
-                )}
-              </div>
-            </nav>
-          </div>
-        )}
-      </header>
-
-      <main id="main-content" className="flex-1">
-        <a
-          href="#main-content"
-          className="sr-only focus:not-sr-only focus:fixed focus:top-2 focus:left-2 focus:z-[100] focus:rounded-md focus:bg-primary focus:px-4 focus:py-2 focus:text-primary-foreground focus:outline-none"
-        >
-          Skip to main content
-        </a>
-        {children}
-      </main>
-
-      <footer className="border-t bg-card" role="contentinfo">
-        <div className="mx-auto max-w-7xl px-4 py-10 lg:px-8 lg:py-12">
-          <div className="flex flex-col gap-10">
-            <div className="grid gap-6 lg:grid-cols-[auto_1fr_auto] lg:items-center">
-              <div className="flex items-center gap-2">
-                <span className="relative block h-5 w-5 shrink-0">
-                  <Image
-                    src="/brand/carecation-heart-light.png"
-                    alt="Carecation logo"
-                    fill
-                    sizes="24px"
-                    className="object-contain dark:hidden"
-                  />
-                  <Image
-                    src="/brand/carecation-heart-dark.png"
-                    alt="Carecation logo"
-                    fill
-                    sizes="24px"
-                    className="hidden object-contain dark:block"
-                  />
-                </span>
-                <span className="flex flex-col leading-none">
-                  <span className="text-xl font-semibold text-foreground">
-                    Care<span className="text-primary">cation</span>
-                  </span>
-                  <span className="text-[11px] text-muted-foreground">
-                    Healthcare meets adventure.
-                  </span>
-                </span>
-              </div>
-
-              <nav className="flex flex-wrap items-center gap-x-6 gap-y-2 lg:justify-center" aria-label="Footer information links">
-                {footerHeaderLinks.map((link) =>
-                  link.href.startsWith("#") ? (
-                    <a
-                      key={link.label}
-                      href={link.href}
-                      className="text-sm font-medium text-foreground underline-offset-4 hover:underline"
-                    >
-                      {link.label}
-                    </a>
-                  ) : (
-                    <SmartLink
-                      key={link.label}
-                      href={link.href}
-                      className="text-sm font-medium text-foreground underline-offset-4 hover:underline"
-                    >
-                      {link.label}
-                    </SmartLink>
-                  ),
-                )}
-              </nav>
-
-              <div className="flex items-center gap-3 lg:justify-self-end">
-                {hasStartedPlan ? (
-                  <>
-                    <Button onClick={handleRestartCarePlan}>
-                      Restart care plan
-                    </Button>
-                    <Button onClick={handleViewItinerary}>
-                      View itinerary
-                    </Button>
-                  </>
-                ) : (
-                  <Button onClick={handleStartCarePlan}>
-                    Begin your care plan
-                  </Button>
-                )}
-              </div>
-            </div>
-
-            <div className="grid gap-10 lg:grid-cols-[1.6fr_1fr_1fr_1fr]">
-              <div className="space-y-4">
-                <p
-                  id="footer-about"
-                  className="max-w-2xl text-xl italic leading-snug text-foreground/90"
-                >
-                  "Our mission is to help people navigate international healthcare with opporunity for adventure & discovery." 
-                 
-                </p>
-                <p id="footer-about"
-                  className="max-w-2xl text-md italic leading-snug text-foreground/90"
-                > -Carecation CEO</p>
-              </div>
-
-              {footerColumns.map((column) => (
-                <div key={column.title} className="space-y-3">
-                  <h4 className="text-2xl font-semibold text-foreground">{column.title}</h4>
-                  <ul className="space-y-2 text-sm">
-                    {column.links.map((link) => (
-                      <li key={`${column.title}-${link.label}`} id={link.id}>
-                        {link.href.startsWith("#") ? (
-                          <a href={link.href} className="text-muted-foreground underline underline-offset-4 hover:text-foreground">
-                            {link.label}
-                          </a>
-                        ) : (
-                          <SmartLink href={link.href} className="text-muted-foreground underline underline-offset-4 hover:text-foreground">
-                            {link.label}
-                          </SmartLink>
-                        )}
-                      </li>
-                    ))}
-                  </ul>
-                </div>
-              ))}
-            </div>
-
-            <div className="flex flex-col gap-4 border-t border-border pt-6">
-              <div>
-                <p className="text-sm text-foreground">Copyright {currentYear} Carecation.</p>
-                <p className="text-sm italic text-muted-foreground">
-Healthcare meets adventure.                </p>
-                <p className="mt-1 text-xs text-muted-foreground">
-                  Not medical advice. Always verify provider credentials and consult licensed healthcare professionals.
-                </p>
-              </div>
-            </div>
-          </div>
-        </div>
-      </footer>
-    </div>
-  );
+  return <div className="min-h-screen flex flex-col">
+    {pathname !== "/intake" && pathname !== "/login" && <header className={`care-nav ${condensed ? "is-condensed" : ""}`}>
+      <Link href="/" className="care-brand" aria-label="Carecation home">
+        <span className="care-brand-mark"><Image src="/brand/carecation-heart-light.png" alt="" fill sizes="22px" className="object-contain dark:hidden" priority /><Image src="/brand/carecation-heart-dark.png" alt="" fill sizes="22px" className="hidden object-contain dark:block" priority /></span>
+        <span>Care<span>cation</span></span>
+      </Link>
+      <nav className={`care-nav-links ${providerPage && providerCondensed ? "provider-links" : ""}`} aria-label="Main navigation">
+        {links.map((item) => { const active = item.href.startsWith("#") ? activeSection === item.href.slice(1) : pathname === item.href; return <Link key={item.href} href={item.href} aria-current={active ? "page" : undefined} className={active ? "active" : ""}>{item.label}</Link>; })}
+        {!providerPage || !providerCondensed ? <><Link href={email ? "/account/plans" : "/login"} aria-current={pathname === "/login" ? "page" : undefined}>{email ? <><FolderOpen size={15} /> My plans</> : <><LogIn size={15} /> Sign in</>}</Link>{email && <Link href="/auth/logout">Sign out</Link>}</> : null}
+      </nav>
+      <div className="care-nav-actions"><ThemeToggle />{pathname === "/itinerary" ? <button type="button" className="care-nav-cta" onClick={() => window.print()}>Print</button> : <button type="button" className="care-nav-cta" onClick={action}>{actionLabel}<ArrowRight size={15} /></button>}</div>
+    </header>}
+    <main id="main-content" className="flex-1">
+      <a href="#main-content" className="sr-only focus:not-sr-only focus:fixed focus:top-2 focus:left-2 focus:z-[100] focus:rounded-full focus:bg-primary focus:px-4 focus:py-2 focus:text-primary-foreground">Skip to content</a>
+      {children}
+    </main>
+    {pathname !== "/intake" && pathname !== "/login" && <footer className="care-footer" role="contentinfo">
+      <Link href="/" className="care-footer-brand"><Heart size={18} fill="currentColor" /> Carecation</Link>
+      <nav aria-label="Footer links">{footerItems.map(([label, href]) => <Link key={label} href={href}>{label}</Link>)}</nav>
+      <span>© {new Date().getFullYear()} · Not medical advice</span>
+    </footer>}
+  </div>;
 }

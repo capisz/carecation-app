@@ -1,3 +1,6 @@
+"use client";
+import Link from "next/link";
+import { usePathname } from "next/navigation";
 import { AppShell } from "@/components/app-shell";
 
 type LegalPageProps = {
@@ -10,21 +13,16 @@ type LegalPageProps = {
 };
 
 export function LegalPage({ title, intro, sections }: LegalPageProps) {
+  const pathname = usePathname();
+  const pages = [["Support", "/support"], ["Privacy", "/privacy"], ["Terms", "/terms"], ["Cookies", "/cookies"], ["Medical disclaimer", "/medical-disclaimer"]] as const;
   return (
     <AppShell>
-      <div className="mx-auto max-w-3xl px-4 py-10 lg:px-8 lg:py-14">
-        <div className="mb-8">
-          <h1 className="text-3xl font-bold text-foreground sm:text-4xl">{title}</h1>
-          <p className="mt-3 text-muted-foreground">{intro}</p>
-        </div>
-        <div className="space-y-8">
-          {sections.map((section) => (
-            <section key={section.title}>
-              <h2 className="text-xl font-semibold text-foreground">{section.title}</h2>
-              <p className="mt-2 leading-7 text-muted-foreground">{section.body}</p>
-            </section>
-          ))}
-        </div>
+      <div className="care-page legal-layout">
+        <aside className="legal-nav" aria-label="Information pages"><nav>{pages.map(([label, href]) => <Link key={href} href={href} aria-current={pathname===href?"page":undefined} className={pathname===href?"active":""}>{label}</Link>)}</nav></aside>
+        <article className="legal-article">
+          <header className="mb-10"><h1 className="care-h1">{title}</h1><p className="mt-5 text-xl font-semibold leading-relaxed text-muted-foreground">{intro}</p></header>
+          <div className="space-y-9">{sections.map((section) => <section key={section.title} className="border-t border-border pt-7"><h2 className="text-xl font-extrabold">{section.title}</h2><p className="mt-3 text-[17px] leading-[1.65] text-muted-foreground">{section.body}</p></section>)}</div>
+        </article>
       </div>
     </AppShell>
   );

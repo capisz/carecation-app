@@ -11,9 +11,9 @@ const config: Config = {
   theme: {
     extend: {
       fontFamily: {
-        sans: ['var(--font-poppins)', 'sans-serif'],
-        serif: ['var(--font-libre-baskerville)', 'serif'],
-        mono: ['var(--font-ibm-plex-mono)', 'monospace'],
+        sans: ['var(--font-sans)', 'sans-serif'],
+        serif: ['var(--font-sans)', 'sans-serif'],
+        mono: ['ui-monospace', 'monospace'],
       },
       colors: {
         background: 'hsl(var(--background))',

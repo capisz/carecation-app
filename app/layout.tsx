@@ -1,6 +1,6 @@
 import React from "react";
 import type { Metadata } from "next";
-import { Poppins, Libre_Baskerville, IBM_Plex_Mono } from "next/font/google";
+import { Nunito_Sans } from "next/font/google";
 import { ThemeProvider } from "@/components/theme-provider";
 import { OverlayProvider } from "@/components/overlay/overlay-provider";
 import { NavOverlay } from "@/components/overlay/nav-overlay";
@@ -10,22 +10,11 @@ import { CookieConsent } from "@/components/cookie-consent";
 import { SuppressWarnings } from "./suppress-warnings";
 import "./globals.css";
 
-const poppins = Poppins({
+const nunitoSans = Nunito_Sans({
   subsets: ["latin"],
-  weight: ["400", "500", "600", "700"],
-  variable: "--font-poppins",
-});
-
-const libreBaskerville = Libre_Baskerville({
-  subsets: ["latin"],
-  weight: ["400", "700"],
-  variable: "--font-libre-baskerville",
-});
-
-const ibmPlexMono = IBM_Plex_Mono({
-  subsets: ["latin"],
-  weight: ["400", "500"],
-  variable: "--font-ibm-plex-mono",
+  weight: ["400", "600", "700", "800"],
+  variable: "--font-sans",
+  display: "swap",
 });
 
 export const metadata: Metadata = {
@@ -56,7 +45,7 @@ export default function RootLayout({
   return (
     <html lang="en" suppressHydrationWarning>
       <body
-        className={`${poppins.variable} ${libreBaskerville.variable} ${ibmPlexMono.variable} font-sans antialiased`}
+        className={`${nunitoSans.variable} font-sans antialiased`}
       >
         <ThemeProvider
           attribute="class"

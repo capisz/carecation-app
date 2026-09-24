@@ -6,7 +6,7 @@ import React, { createContext, useCallback, useContext, useRef, useState } from 
  * ECG+plane animation loop duration.
  * The overlay runs one full ECG trace in this time.
  */
-export const LOADER_CYCLE_MS = 4500;
+export const LOADER_CYCLE_MS = 2000;
 
 /** Small anti-flicker floor */
 const ANTI_FLICKER_MS = 300;

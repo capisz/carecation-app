@@ -7,8 +7,7 @@ import { useLoading, LOADER_CYCLE_MS } from "./loading-provider";
 /**
  * ECG path with visible zig-zag spikes.
  */
-const ECG_PATH =
-  "M 0,50 L 60,50 L 80,50 L 95,15 L 105,85 L 115,50 L 180,50 L 200,50 L 215,20 L 225,80 L 235,50 L 310,50 L 330,50 L 345,10 L 355,90 L 365,50 L 450,50";
+const ECG_PATH = "M 0,40 L 100,40 L 116,40 L 128,14 L 142,66 L 154,28 L 164,40 L 320,40";
 
 const FADE_DURATION = 0.2;
 
@@ -81,7 +80,7 @@ export function LoadingOverlay() {
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
           transition={{ duration: FADE_DURATION }}
-          className="fixed inset-0 z-[200] flex flex-col items-center justify-center bg-background/90 backdrop-blur-sm"
+          className="fixed inset-0 z-[200] flex flex-col items-center justify-center bg-background/[.94] backdrop-blur-md"
           role="alert"
           aria-live="assertive"
           aria-label="Loading"
@@ -89,11 +88,11 @@ export function LoadingOverlay() {
           {reducedMotion ? (
             <p className="text-sm font-medium text-foreground">Loading…</p>
           ) : (
-            <div className="w-full max-w-lg px-8">
+            <div className="w-full max-w-[360px] px-5">
               <svg
-                width="450"
-                height="100"
-                viewBox="0 0 450 100"
+                width="320"
+                height="80"
+                viewBox="0 0 320 80"
                 className="w-full h-auto"
                 preserveAspectRatio="xMidYMid meet"
               >
@@ -136,7 +135,7 @@ export function LoadingOverlay() {
                 initial={{ opacity: 0, y: 8 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: 0.15 }}
-                className="mt-4 text-center text-sm font-medium text-foreground"
+                className="mt-4 text-center text-[17px] font-bold text-foreground"
               >
                 Preparing your Carecation…
               </motion.p>

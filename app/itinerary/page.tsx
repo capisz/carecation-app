@@ -3,6 +3,7 @@
 import { Suspense, useEffect, useMemo, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import Link from "next/link";
+import Image from "next/image";
 import { usePageReady } from "@/hooks/use-page-ready";
 import { AppShell } from "@/components/app-shell";
 import { ItineraryTimeline, generateItinerary } from "@/components/itinerary-timeline";
@@ -290,6 +291,10 @@ function ItineraryContent() {
   );
   const currentYear = new Date().getFullYear();
   const destinationCountry = useMemo(() => inferDestinationCountry(plan), [plan]);
+  const destinationProfile = findTravelLocation(plan.travelRecommendation?.recommendedDestination ?? destinationCountry ?? "Thailand");
+  const destinationCity = provider?.city ?? plan.travelRecommendation?.recommendedDestination ?? destinationProfile?.recommendedCity ?? "your destination";
+  const destinationPhoto: Record<string,string> = { Thailand:"thailand", Mexico:"mexico", Turkey:"turkey", Spain:"spain", Guatemala:"guatemala", "South Korea":"south-korea", Vietnam:"vietnam", Cuba:"cuba", Taiwan:"taiwan", Sweden:"sweden", Norway:"norway", Singapore:"singapore", Ireland:"ireland", Japan:"japan", Netherlands:"netherlands" };
+  const destinationImage = `/destinations/${destinationPhoto[destinationCountry ?? "Thailand"] ?? "thailand"}.jpg`;
   const hasTravelSelection = Boolean(plan.flight || plan.hotel);
   const affiliateBookingOptions = useMemo(() => {
     if (!hasTravelSelection) {
@@ -356,7 +361,7 @@ function ItineraryContent() {
   }
 
   return (
-    <div className="itinerary-print mx-auto max-w-4xl px-4 py-8 lg:px-8 lg:py-12">
+    <div className="care-page itinerary-print mx-auto">
       <div className="no-print">
         <Button variant="ghost" asChild className="mb-6 text-muted-foreground">
           <Link href={provider ? `/provider/${provider.id}` : "/travel"}>
@@ -366,29 +371,9 @@ function ItineraryContent() {
         </Button>
       </div>
 
-      <div className="mb-8 flex flex-col items-start justify-between gap-4 sm:flex-row">
-        <div>
-          <h1 className="text-2xl font-bold text-foreground sm:text-3xl">
-            Your Carecation Itinerary
-          </h1>
-          <p className="mt-1 text-muted-foreground">
-            Combined travel, stay, and healthcare estimate in one place.
-          </p>
-        </div>
-        <div className="no-print flex gap-2">
-          <Button size="sm" onClick={() => window.print()}>
-            <Printer className="mr-2 h-4 w-4" />
-            Print
-          </Button>
-          {provider && (
-            <Button asChild size="sm">
-              <Link href={`/request?providerId=${provider.id}`}>
-                <FileText className="mr-2 h-4 w-4" />
-                Request quote
-              </Link>
-            </Button>
-          )}
-        </div>
+      <div className="mb-14 grid items-center gap-10 lg:grid-cols-[1fr_360px]">
+        <div><p className="mb-5 text-sm font-extrabold text-muted-foreground">Your carecation</p><h1>{itineraryDays.length ? `${itineraryDays.length} days in ${destinationCity}` : `Your trip to ${destinationCity}`}</h1><p className="mt-4 max-w-2xl text-lg font-semibold text-muted-foreground">{provider?.name ?? plan.healthcareEstimate?.providerName ?? "Travel and care details"}{provider?.procedures.length ? ` · ${provider.procedures.slice(0,2).join(" & ")}` : ""}</p></div>
+        <div className="relative aspect-[1.2] overflow-hidden rounded-[28px]"><Image src={destinationImage} alt={`${destinationCity} destination`} fill sizes="360px" className="object-cover" priority/></div>
       </div>
 
       {provider && (
