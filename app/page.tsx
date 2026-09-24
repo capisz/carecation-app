@@ -2,7 +2,6 @@ import { AppShell } from "@/components/app-shell";
 import { FlagParallaxBackground } from "@/components/landing/flag-parallax-background";
 import { ScrollReveal } from "@/components/landing/scroll-reveal";
 import { HeroSection } from "@/components/landing/hero-section";
-import { HowItWorks } from "@/components/landing/how-it-works";
 import { DestinationsSection } from "@/components/landing/destinations-section";
 import { CtaSection } from "@/components/landing/cta-section";
 import { ScrollSyncedDividerPlane } from "@/components/landing/scroll-synced-divider-plane";
@@ -16,28 +15,19 @@ export default function HomePage() {
         </FlagParallaxBackground>
       </div>
 
-      {/* Plane rides THIS divider while you scroll through HowItWorks toward Destinations */}
-<section id="how" className="relative overflow-visible border-t border-border" style={{ position: 'relative' }}>
-        <ScrollSyncedDividerPlane startId="how" endId="destinations" />
-        <HowItWorks />
-      </section>
-
-<section id="destinations" className="relative overflow-visible border-t border-border" style={{ position: 'relative' }}>
-        <ScrollSyncedDividerPlane startId="destinations" endId="cta" />
+      <section id="destinations" className="relative overflow-visible border-t border-border" style={{ position: 'relative' }}>
+        <ScrollSyncedDividerPlane startId="hero" endId="destinations" />
         <ScrollReveal delay={0.1}>
           <DestinationsSection />
         </ScrollReveal>
       </section>
 
-      {/* Last section: you can omit plane or have it run to page bottom */}
-<section id="cta" className="relative overflow-visible border-t border-border" style={{ position: 'relative' }}>
-  <ScrollSyncedDividerPlane startId="cta" endId="page-end" />
-  <ScrollReveal delay={0.1}>
-    <CtaSection />
-  </ScrollReveal>
-</section>
-
-<div id="page-end" className="h-px" />
+      <section id="cta" className="relative overflow-visible border-t border-border" style={{ position: 'relative' }}>
+        <ScrollSyncedDividerPlane startId="destinations" endId="cta" />
+        <ScrollReveal delay={0.1}>
+          <CtaSection />
+        </ScrollReveal>
+      </section>
     </AppShell>
   );
 }

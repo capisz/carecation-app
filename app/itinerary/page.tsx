@@ -22,7 +22,6 @@ import {
   ArrowLeft,
   BedDouble,
   CalendarDays,
-  FileText,
   MapPin,
   Plane,
   Printer,
@@ -216,6 +215,53 @@ function formatPrice(value: number, currency: string): string {
   }
 }
 
+function formatTripDate(value?: string | null): string {
+  if (!value) return "Dates to be confirmed";
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return value;
+  return new Intl.DateTimeFormat(undefined, { month: "short", day: "numeric", year: "numeric" }).format(date);
+}
+
+function PrintTripSheet({
+  plan, providerName, destination, days, totalMin, totalMax, savings, country,
+}: {
+  plan: ItineraryPlan; providerName: string; destination: string;
+  days: ReturnType<typeof generateItinerary>; totalMin: number; totalMax: number;
+  savings: number; country: string | null;
+}) {
+  const startDate = plan.hotel?.checkInDate ?? plan.flight?.outboundDepartAt ?? null;
+  const emergency: Record<string, string> = {
+    Thailand: "1669 medical · 1155 tourist police", Mexico: "911",
+    Turkey: "112", Spain: "112", Guatemala: "122 medical · 123 fire",
+    "South Korea": "119 medical/fire · 112 police", Vietnam: "115 medical · 113 police",
+    Japan: "119 medical/fire · 110 police", Ireland: "112 / 999", Netherlands: "112",
+    Sweden: "112", Norway: "113 medical · 112 police", Singapore: "995 medical · 999 police",
+  };
+  return <article data-sheet aria-label="Printable trip sheet">
+    <header className="sheet-header"><strong className="sheet-brand">Care<span>cation</span></strong><span>TRIP SHEET</span></header>
+    <section className="sheet-title-row" data-avoid>
+      <div><h1>{days.length ? `${days.length} days in ${destination}` : `Your trip to ${destination}`}</h1><p>{formatTripDate(startDate)}{plan.hotel?.checkOutDate ? ` – ${formatTripDate(plan.hotel.checkOutDate)}` : ""} · {providerName}</p></div>
+      <div className="sheet-total"><span>Estimated total</span><strong>{formatUsd(totalMin)} – {formatUsd(totalMax)}</strong>{savings > 0 && <small>Potential savings {formatUsd(savings)} vs. U.S. benchmark</small>}</div>
+    </section>
+    <section className="sheet-trip-strip" data-avoid>
+      {plan.flight && <div><span>Flight</span><strong>{plan.flight.originIata} → {plan.flight.destinationIata}</strong><small>{formatTripDate(plan.flight.outboundDepartAt)}</small><b>{formatUsd(plan.flight.totalPrice)}</b></div>}
+      {plan.hotel && <div><span>Hotel</span><strong>{plan.hotel.name}</strong><small>{formatTripDate(plan.hotel.checkInDate)} – {formatTripDate(plan.hotel.checkOutDate)}</small><b>{formatUsd(plan.hotel.totalPrice)}</b></div>}
+      {plan.healthcareEstimate && <div><span>Care</span><strong>{plan.healthcareEstimate.providerName}</strong><small>Healthcare estimate</small><b>{formatUsd(plan.healthcareEstimate.estimateMin)} – {formatUsd(plan.healthcareEstimate.estimateMax)}</b></div>}
+    </section>
+    <h2 className="sheet-section-title">Day by day</h2>
+    {days.length ? <div>{days.map((day, index) => {
+      const date = startDate ? new Date(new Date(startDate).getTime() + index * 86400000) : null;
+      const tone = day.type === "recovery" ? "recovery" : day.type === "procedure" || day.type === "departure" ? "text" : "primary";
+      return <div className="sheet-day" data-avoid key={day.day}><strong className={`sheet-day-number ${tone}`}>Day {day.day}</strong><span>{date && !Number.isNaN(date.getTime()) ? formatTripDate(date.toISOString()) : "Date TBD"}</span><p><b>{day.title}.</b> {day.description}</p><i aria-hidden="true" /></div>;
+    })}</div> : <p className="sheet-empty">No day-by-day care plan has been added yet.</p>}
+    <section className="sheet-bottom-grid" data-avoid>
+      <div><h2>Before you go</h2>{["Passport valid 6+ months", "Visa and entry requirements", "Medical records and X-rays", "Travel and medical insurance", "Current medication list", "Clinic appointment confirmed"].map((item) => <p className="sheet-check" key={item}><i />{item}</p>)}</div>
+      <div><h2>Contacts</h2><p><b>Clinic</b><span>{providerName}</span></p><p><b>Hotel</b><span>{plan.hotel?.name ?? "Not selected"}</span></p><p><b>Emergency</b><span>{(country && emergency[country]) || "Check local emergency services"}</span></p><p className="sheet-notes"><b>Notes</b><span /></p></div>
+    </section>
+    <footer className="sheet-footer"><span>Planning information only. Confirm travel and care details directly with your providers. Not medical advice.</span><strong>carecation</strong></footer>
+  </article>;
+}
+
 function ItineraryContent() {
   usePageReady();
   const searchParams = useSearchParams();
@@ -223,6 +269,15 @@ function ItineraryContent() {
   const provider = providerId ? getProviderById(providerId) : null;
 
   const [plan, setPlan] = useState<ItineraryPlan>({});
+  const [printPreview, setPrintPreview] = useState(false);
+
+  useEffect(() => {
+    const open = () => setPrintPreview(true);
+    const closeOnEscape = (event: KeyboardEvent) => { if (event.key === "Escape") setPrintPreview(false); };
+    window.addEventListener("carecation:open-print-preview", open);
+    window.addEventListener("keydown", closeOnEscape);
+    return () => { window.removeEventListener("carecation:open-print-preview", open); window.removeEventListener("keydown", closeOnEscape); };
+  }, []);
 
   useEffect(() => {
     const syncPlan = () => {
@@ -361,7 +416,8 @@ function ItineraryContent() {
   }
 
   return (
-    <div className="care-page itinerary-print mx-auto">
+    <>
+    <div data-screen className="care-page itinerary-print mx-auto">
       <div className="no-print">
         <Button variant="ghost" asChild className="mb-6 text-muted-foreground">
           <Link href={provider ? `/provider/${provider.id}` : "/travel"}>
@@ -721,6 +777,14 @@ function ItineraryContent() {
         Copyright {currentYear} Carecation. Healthcare meets adventure.
       </p>
     </div>
+    <div data-sheetwrap data-open={printPreview ? "true" : "false"} aria-hidden={!printPreview}>
+      <div data-sheetbar>
+        <button type="button" onClick={() => window.print()}><Printer size={16} /> Print or save PDF</button>
+        <button type="button" className="sheet-close" onClick={() => setPrintPreview(false)}>Close</button>
+      </div>
+      <PrintTripSheet plan={plan} providerName={provider?.name ?? plan.healthcareEstimate?.providerName ?? "Care provider to be confirmed"} destination={destinationCity} days={itineraryDays} totalMin={totalMin} totalMax={totalMax} savings={Math.max(0, maxSavingsDifference)} country={destinationCountry} />
+    </div>
+    </>
   );
 }
 

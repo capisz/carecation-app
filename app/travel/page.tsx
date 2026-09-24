@@ -1,9 +1,9 @@
 "use client";
 
-import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Suspense, useEffect, useMemo, useState, type FormEvent } from "react";
 import { AppShell } from "@/components/app-shell";
+import { HotelsPanel } from "@/components/travel/hotels-panel";
 import { useLoading } from "@/components/loading-provider";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -18,13 +18,12 @@ import { findTravelLocation, type TravelLocationProfile } from "@/lib/travel-loc
 import { cn } from "@/lib/utils";
 import {
   AlertCircle,
-  ArrowRight,
   Calendar,
+  Check,
   CheckCircle2,
   Clock,
   Loader2,
   Plane,
-  Search,
 } from "lucide-react";
 
 type FlightSegment = {
@@ -113,12 +112,6 @@ function formatDateTime(value: string): string {
     hour: "numeric",
     minute: "2-digit",
   }).format(date);
-}
-
-function formatSearchDate(value: string): string {
-  const date = new Date(`${value}T00:00:00`);
-  if (!value || Number.isNaN(date.getTime())) return "your dates";
-  return new Intl.DateTimeFormat(undefined, { month: "short", day: "numeric" }).format(date);
 }
 
 function normalizeCurrencyCode(currency: string): string {
@@ -348,6 +341,10 @@ function TravelPageContent() {
   const [flights, setFlights] = useState<FlightResult[]>([]);
   const [visibleFlightsCount, setVisibleFlightsCount] = useState(6);
   const [selectedFlightId, setSelectedFlightId] = useState<string | null>(null);
+  const [hotelSelected, setHotelSelected] = useState(false);
+  const [activeTravelTab, setActiveTravelTab] = useState<"flights" | "hotels">(
+    searchParams.get("travelTab") === "hotels" ? "hotels" : "flights",
+  );
   const [isContinuingToHotels, setIsContinuingToHotels] = useState(false);
   const [logoAttemptByFlightId, setLogoAttemptByFlightId] = useState<Record<string, number>>(
     {},
@@ -361,6 +358,10 @@ function TravelPageContent() {
 
   const originLookup = useAirportLookup(form.originQuery);
   const destinationLookup = useAirportLookup(form.destinationQuery);
+
+  useEffect(() => {
+    setActiveTravelTab(searchParams.get("travelTab") === "hotels" ? "hotels" : "flights");
+  }, [searchParams]);
 
   const originProfile = useMemo(
     () => findTravelLocation(form.originQuery),
@@ -544,8 +545,22 @@ function TravelPageContent() {
 
   const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
-    setHasSearched(true);
     setError(null);
+
+    if (activeTravelTab === "hotels") {
+      if (!selectedDestination || !hotelsHref) {
+        setError("Choose a destination airport to search nearby hotels.");
+        return;
+      }
+      if (form.checkOutDate < form.checkInDate) {
+        setError("Hotel check-out must be on or after check-in.");
+        return;
+      }
+      switchTravelTab("hotels");
+      return;
+    }
+
+    setHasSearched(true);
 
     if (!selectedOrigin || !selectedDestination) {
       setError("Choose an origin and destination airport from the dropdowns.");
@@ -566,15 +581,13 @@ function TravelPageContent() {
     setIsSearching(true);
 
     try {
-      const flightsResponse = await withLoading(() =>
-        postJson<SearchResponse<FlightResult>>("/api/flights/search", {
+      const flightsResponse = await postJson<SearchResponse<FlightResult>>("/api/flights/search", {
           origin: selectedOrigin.iataCode,
           destination: selectedDestination.iataCode,
           departDate: form.departDate,
           returnDate: form.returnDate || undefined,
           adults: form.adults,
-        }),
-      );
+        });
 
       setFlights(flightsResponse.results);
       setSelectedFlightId(flightsResponse.results[0]?.id ?? null);
@@ -634,23 +647,36 @@ function TravelPageContent() {
       if (!saved) {
         return;
       }
-      router.push(hotelsHref);
+      switchTravelTab("hotels", true);
     } finally {
       setIsContinuingToHotels(false);
     }
   };
 
-  const canSearch = Boolean(selectedOrigin && selectedDestination) && !isSearching;
-  const searchDateLabel = form.returnDate ? `${formatSearchDate(form.departDate)} – ${formatSearchDate(form.returnDate)}` : formatSearchDate(form.departDate);
+  const switchTravelTab = (tab: "flights" | "hotels", flightAlreadySaved = false) => {
+    if (tab === "hotels" && selectedFlight && !flightAlreadySaved) {
+      void persistSelectedFlight();
+    }
+    setActiveTravelTab(tab);
+    const params = new URLSearchParams(searchParams.toString());
+    if (tab === "hotels") {
+      const hotelParams = new URLSearchParams(hotelsHref?.split("?")[1] ?? "");
+      hotelParams.forEach((value, key) => params.set(key, value));
+      params.set("travelTab", "hotels");
+    } else {
+      params.delete("travelTab");
+    }
+    router.replace(`/travel${params.size ? `?${params.toString()}` : ""}`, { scroll: false });
+  };
+
+  const canSearch = (activeTravelTab === "hotels" ? Boolean(selectedDestination) : Boolean(selectedOrigin && selectedDestination)) && !isSearching;
   const selectedFlightPriceLabel = selectedFlight ? typeof usdByFlightId[selectedFlight.id] === "number" ? formatPrice(usdByFlightId[selectedFlight.id], "USD") : conversionErrorByFlightId[selectedFlight.id] ?? "Converting…" : "";
 
   return (
     <AppShell>
       <div className="care-page travel-page">
         <div className="mb-8 space-y-2 sm:space-y-3">
-          <h1 className="travel-sentence text-balance">
-            Fly from <span>{form.originQuery || "New York"}</span> to <span>{form.destinationQuery || "Bangkok"}</span>, <span>{searchDateLabel}</span>
-          </h1>
+          <h1 className="travel-sentence text-balance">Where to?</h1>
         </div>
 
         {recommendedDestination && (
@@ -699,12 +725,20 @@ function TravelPageContent() {
           </Card>
         )}
 
+        <div className="travel-tabs-row mb-8 flex flex-wrap items-center justify-between gap-4">
+          <div className="care-tabs travel-step-tabs" role="tablist" aria-label="Travel type">
+            <button id="flights-tab" type="button" role="tab" aria-controls="flight-results-panel" aria-selected={activeTravelTab === "flights"} onClick={() => switchTravelTab("flights")} className={activeTravelTab === "flights" ? "active" : ""}>Flights{selectedFlight && <><Check size={14} aria-hidden="true" /><span className="sr-only">Flight selected</span></>}</button>
+            <button id="hotels-tab" type="button" role="tab" aria-controls="hotel-results-panel" aria-selected={activeTravelTab === "hotels"} onClick={() => switchTravelTab("hotels")} className={activeTravelTab === "hotels" ? "active" : ""}>Hotels{hotelSelected && <><Check size={14} aria-hidden="true" /><span className="sr-only">Hotel selected</span></>}</button>
+          </div>
+          <span className="travel-results-status">{activeTravelTab === "hotels" ? (hotelSelected ? "Hotel selected" : "Search hotel options") : isSearching ? "Searching…" : hasSearched ? `${flights.length} flights · ${selectedOrigin?.iataCode ?? "—"} → ${selectedDestination?.iataCode ?? "—"}` : "Search flight options"}</span>
+        </div>
+
         <Card className="mb-8 travel-search-panel">
           <CardContent className="p-6">
             <form onSubmit={handleSubmit} className="space-y-5">
               <div className="grid gap-4 md:grid-cols-2">
-                <div className="space-y-2">
-                  <Label htmlFor="originQuery">Origin location</Label>
+                {activeTravelTab === "flights" && <div className="space-y-2">
+                  <Label htmlFor="originQuery">From</Label>
                   <Input
                     id="originQuery"
                     value={form.originQuery}
@@ -749,15 +783,15 @@ function TravelPageContent() {
                         .join(", ")}
                     </p>
                   )}
-                </div>
+                </div>}
 
-                <div className="space-y-2">
-                  <Label htmlFor="destinationQuery">Destination location</Label>
+                <div className={`space-y-2 ${activeTravelTab === "hotels" ? "md:col-span-2" : ""}`}>
+                  <Label htmlFor="destinationQuery">Where to?</Label>
                   <Input
                     id="destinationQuery"
                     value={form.destinationQuery}
                     onChange={(event) => update("destinationQuery", event.target.value)}
-                    placeholder="Bangkok"
+                    placeholder="City or airport"
                     required
                   />
                   <Label
@@ -809,7 +843,7 @@ function TravelPageContent() {
                 </div>
               </div>
 
-              <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+              {activeTravelTab === "flights" ? <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
                 <div className="space-y-2">
                   <Label htmlFor="departDate">Depart date</Label>
                   <Input
@@ -829,8 +863,9 @@ function TravelPageContent() {
                     onChange={(event) => update("returnDate", event.target.value)}
                   />
                 </div>
+              </div> : <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
                 <div className="space-y-2">
-                  <Label htmlFor="checkInDate">Hotel check-in</Label>
+                  <Label htmlFor="checkInDate">Check-in</Label>
                   <Input
                     id="checkInDate"
                     type="date"
@@ -840,7 +875,7 @@ function TravelPageContent() {
                   />
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="checkOutDate">Hotel check-out</Label>
+                  <Label htmlFor="checkOutDate">Check-out</Label>
                   <Input
                     id="checkOutDate"
                     type="date"
@@ -849,11 +884,11 @@ function TravelPageContent() {
                     required
                   />
                 </div>
-              </div>
+              </div>}
 
               <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
                 <div className="space-y-2">
-                  <Label htmlFor="adults">Adults</Label>
+                  <Label htmlFor="adults">{activeTravelTab === "hotels" ? "Guests" : "Travelers"}</Label>
                   <Input
                     id="adults"
                     type="number"
@@ -875,12 +910,12 @@ function TravelPageContent() {
               </div>
 
               <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
-                <Button type="submit" aria-label="Search flights" className="travel-search-submit h-14 w-14 shrink-0 rounded-full p-0" disabled={!canSearch}>
+                <Button type="submit" aria-label={activeTravelTab === "hotels" ? "Search hotels" : "Search flights"} className="travel-search-submit h-14 w-14 shrink-0 rounded-full p-0" disabled={!canSearch}>
                   {isSearching ? (
                     <Loader2 className="h-5 w-5 animate-spin" />
                   ) : (
                     <>
-                      <ArrowRight className="h-5 w-5" />
+                      <Plane className="h-5 w-5 rotate-45" aria-hidden="true" />
                     </>
                   )}
                 </Button>
@@ -889,11 +924,9 @@ function TravelPageContent() {
           </CardContent>
         </Card>
 
-        <div className="travel-tabs-row mb-8 flex flex-wrap items-center justify-between gap-4">
-          <div className="care-tabs" aria-label="Travel type"><Link href="/travel" aria-current="page">Flights</Link><Link href="/travel/hotels">Hotels</Link></div>
-          <span className="travel-results-status">{isSearching ? "Searching…" : hasSearched ? `${flights.length} flights · ${selectedOrigin?.iataCode ?? "—"} → ${selectedDestination?.iataCode ?? "—"}` : "Choose a route to get started"}</span>
-        </div>
-
+        <div className="travel-panel-viewport" data-active-tab={activeTravelTab}>
+        <div className="travel-panel-track">
+        <section id="flight-results-panel" role="tabpanel" aria-labelledby="flights-tab" tabIndex={0} className="travel-step-panel" aria-hidden={activeTravelTab !== "flights"} inert={activeTravelTab !== "flights"}>
         {error && (
           <div className="mb-8 flex items-start gap-2 rounded-lg border border-destructive/30 bg-destructive/10 px-4 py-3 text-sm text-destructive">
             <AlertCircle className="mt-0.5 h-4 w-4 shrink-0" />
@@ -910,34 +943,7 @@ function TravelPageContent() {
             <Badge className="travel-count" variant="secondary">{flights.length} found</Badge>
           </div>
 
-          {hasSearched && (
-            <div className="mb-4 flex flex-col gap-2 sm:flex-row sm:justify-end">
-              <Button asChild size="sm">
-                <Link href="/itinerary">View itinerary</Link>
-              </Button>
-              <Button
-                type="button"
-                size="sm"
-                onClick={handleContinueToHotels}
-                disabled={!hotelsHref || !selectedFlight || isContinuingToHotels}
-              >
-                {isContinuingToHotels ? (
-                  <>
-                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                    Saving flight...
-                  </>
-                ) : (
-                  "Choose a hotel"
-                )}
-              </Button>
-            </div>
-          )}
-
-          {isSearching && (
-            <div className="rounded-lg border border-border bg-card p-6 text-sm text-muted-foreground">
-              Loading flight offers...
-            </div>
-          )}
+          {isSearching && <div className="travel-skeleton-list" aria-label="Loading flight offers">{[0,1,2].map((row) => <div className="travel-skeleton-row" key={row}><i/><span><b/><b/></span><strong/></div>)}</div>}
 
           {!isSearching && hasSearched && flights.length === 0 && (
             <div className="rounded-lg border border-border bg-card p-6 text-sm text-muted-foreground">
@@ -1136,30 +1142,16 @@ function TravelPageContent() {
                 </div>
               )}
 
-              <div className="mt-6 flex flex-col gap-2 sm:flex-row sm:justify-end">
-                <Button asChild size="sm">
-                  <Link href="/itinerary">View itinerary</Link>
-                </Button>
-                <Button
-                  type="button"
-                  size="sm"
-                  onClick={handleContinueToHotels}
-                  disabled={!hotelsHref || !selectedFlight || isContinuingToHotels}
-                >
-                  {isContinuingToHotels ? (
-                    <>
-                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                      Saving flight...
-                    </>
-                  ) : (
-                    "Choose a hotel"
-                  )}
-                </Button>
-              </div>
             </>
           )}
         </section>
-      {selectedFlight && <div className="care-action-bar" role="region" aria-label="Selected flight"><span>{selectedFlight.itineraries[0]?.segments[0]?.carrierName ?? "Flight"} · {selectedFlightPriceLabel}</span><button onClick={handleContinueToHotels} className="care-action-cta" disabled={!hotelsHref||isContinuingToHotels}>Choose a hotel <ArrowRight size={15}/></button></div>}
+      {selectedFlight && <div className="care-action-bar" role="region" aria-label="Selected flight"><span>{selectedFlight.itineraries[0]?.segments[0]?.carrierName ?? "Flight"} · {selectedFlightPriceLabel}</span><button onClick={handleContinueToHotels} className="care-action-cta" disabled={!hotelsHref||isContinuingToHotels}>{isContinuingToHotels ? "Saving flight…" : "Choose a hotel"} <Plane size={15} className="rotate-45" aria-hidden="true" /></button></div>}
+        </section>
+        <section id="hotel-results-panel" role="tabpanel" aria-labelledby="hotels-tab" tabIndex={0} className="travel-step-panel" aria-hidden={activeTravelTab !== "hotels"} inert={activeTravelTab !== "hotels"}>
+          <HotelsPanel embedded onSwitchToFlights={() => switchTravelTab("flights")} onSelectionChange={setHotelSelected} />
+        </section>
+        </div>
+        </div>
       </div>
       <Toaster />
     </AppShell>

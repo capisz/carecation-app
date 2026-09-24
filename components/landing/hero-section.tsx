@@ -4,7 +4,7 @@ import { useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { useOverlay } from "@/components/overlay/overlay-provider";
-import { ArrowRight } from "lucide-react";
+import { Plane } from "lucide-react";
 import { useReducedMotion } from "framer-motion";
 
 // ---- Stripe animation tuning ----
@@ -260,7 +260,7 @@ export function HeroSection() {
               onMouseEnter={() => router.prefetch("/intake")}
             >
               Start your plan
-              <ArrowRight className="ml-2 h-4 w-4" aria-hidden="true" />
+              <Plane className="ml-2 h-4 w-4 rotate-45" aria-hidden="true" />
             </Button>
 
             <a href="/clinics" className="font-bold text-foreground underline decoration-primary underline-offset-8">Browse providers</a>
